@@ -1,26 +1,41 @@
 import { create } from 'zustand';
-import { User, Session } from '@supabase/supabase-js';
+import { persist } from 'zustand/middleware';
+
+// Credenciais fixas do admin
+const ADMIN_CREDENTIALS = {
+  username: 'Prooadmin',
+  password: 'Rafa31200'
+};
 
 interface AuthStore {
-  user: User | null;
-  session: Session | null;
   isAdmin: boolean;
   isLoading: boolean;
-  setUser: (user: User | null) => void;
-  setSession: (session: Session | null) => void;
-  setIsAdmin: (isAdmin: boolean) => void;
-  setIsLoading: (isLoading: boolean) => void;
-  reset: () => void;
+  login: (username: string, password: string) => boolean;
+  logout: () => void;
+  checkAuth: () => boolean;
 }
 
-export const useAuthStore = create<AuthStore>((set) => ({
-  user: null,
-  session: null,
-  isAdmin: false,
-  isLoading: true,
-  setUser: (user) => set({ user }),
-  setSession: (session) => set({ session }),
-  setIsAdmin: (isAdmin) => set({ isAdmin }),
-  setIsLoading: (isLoading) => set({ isLoading }),
-  reset: () => set({ user: null, session: null, isAdmin: false, isLoading: false }),
-}));
+export const useAuthStore = create<AuthStore>()(
+  persist(
+    (set, get) => ({
+      isAdmin: false,
+      isLoading: false,
+      login: (username: string, password: string) => {
+        if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
+          set({ isAdmin: true });
+          return true;
+        }
+        return false;
+      },
+      logout: () => {
+        set({ isAdmin: false });
+      },
+      checkAuth: () => {
+        return get().isAdmin;
+      }
+    }),
+    {
+      name: 'edu-book-admin-auth',
+    }
+  )
+);
