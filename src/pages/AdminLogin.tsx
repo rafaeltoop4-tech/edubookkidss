@@ -5,34 +5,39 @@ import { Lock, User, ArrowLeft, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { supabase } from '@/integrations/supabase/client';
+import { useAuthStore } from '@/store/authStore';
 import { toast } from 'sonner';
 
 export default function AdminLogin() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
+  const { login, isAdmin } = useAuthStore();
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Redirecionar se já estiver logado
+  if (isAdmin) {
+    navigate('/admin/dashboard');
+    return null;
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+    // Simular delay para feedback visual
+    await new Promise(resolve => setTimeout(resolve, 500));
 
-      if (error) throw error;
+    const success = login(username, password);
 
+    if (success) {
       toast.success('Login realizado com sucesso! 🎉');
       navigate('/admin/dashboard');
-    } catch (error: any) {
-      toast.error(error.message || 'Erro ao fazer login');
-    } finally {
-      setIsLoading(false);
+    } else {
+      toast.error('Usuário ou senha incorretos');
     }
+
+    setIsLoading(false);
   };
 
   return (
@@ -55,17 +60,18 @@ export default function AdminLogin() {
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <Label htmlFor="email" className="flex items-center gap-2 mb-2">
-                <User className="h-4 w-4" /> E-mail
+              <Label htmlFor="username" className="flex items-center gap-2 mb-2">
+                <User className="h-4 w-4" /> Usuário
               </Label>
               <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@edubookkids.com"
+                id="username"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Digite seu usuário"
                 className="rounded-xl"
                 required
+                autoComplete="username"
               />
             </div>
             <div>
@@ -80,6 +86,7 @@ export default function AdminLogin() {
                 placeholder="••••••••"
                 className="rounded-xl"
                 required
+                autoComplete="current-password"
               />
             </div>
             <Button
