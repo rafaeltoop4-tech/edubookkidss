@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingCart, Eye, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { ShoppingCart, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useCartStore } from '@/store/cartStore';
+import { useProductMetrics } from '@/hooks/useProductMetrics';
 import { toast } from 'sonner';
 
 interface Product {
@@ -14,6 +15,7 @@ interface Product {
   images: string[];
   tags: string[];
   stock: number;
+  show_stock?: boolean;
   featured: boolean;
 }
 
@@ -24,7 +26,17 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
+  const [hasTrackedView, setHasTrackedView] = useState(false);
   const { addItem, openCart } = useCartStore();
+  const { trackView, trackCartAdd } = useProductMetrics();
+
+  // Track view when product comes into viewport
+  useEffect(() => {
+    if (!hasTrackedView) {
+      trackView(product.id);
+      setHasTrackedView(true);
+    }
+  }, [hasTrackedView, product.id, trackView]);
 
   const handleAddToCart = () => {
     addItem({
@@ -33,6 +45,10 @@ export function ProductCard({ product }: ProductCardProps) {
       price: product.price,
       image: product.images[0] || '/placeholder.svg',
     });
+    
+    // Track cart add event
+    trackCartAdd(product.id, 1);
+    
     toast.success(`${product.title} adicionado ao carrinho! 🎉`);
     openCart();
   };
@@ -57,6 +73,10 @@ export function ProductCard({ product }: ProductCardProps) {
       currency: 'BRL',
     }).format(price);
   };
+
+  // Check if stock should be shown
+  const showStock = product.show_stock !== false;
+  const isLowStock = showStock && product.stock > 0 && product.stock <= 5;
 
   return (
     <motion.div
@@ -181,7 +201,7 @@ export function ProductCard({ product }: ProductCardProps) {
             <span className="font-fredoka text-2xl font-bold text-accent">
               {formatPrice(product.price)}
             </span>
-            {product.stock > 0 && product.stock <= 5 && (
+            {isLowStock && (
               <span className="text-xs text-muted-foreground">
                 Apenas {product.stock} restantes!
               </span>

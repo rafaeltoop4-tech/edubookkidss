@@ -14,6 +14,7 @@ interface Product {
   images: string[];
   tags: string[];
   stock: number;
+  show_stock?: boolean;
   featured: boolean;
 }
 
@@ -48,6 +49,7 @@ export function ProductsSection() {
           images: p.images || [],
           tags: p.tags || [],
           stock: p.stock || 0,
+          show_stock: (p as any).show_stock !== false,
           featured: p.featured || false
         }));
         setProducts(mappedProducts);

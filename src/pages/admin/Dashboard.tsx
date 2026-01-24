@@ -1,16 +1,16 @@
 import { motion } from 'framer-motion';
-import { Package, Star, HelpCircle, Eye, TrendingUp, ShoppingCart } from 'lucide-react';
+import { Package, Star, HelpCircle, Eye, TrendingUp, ShoppingCart, MousePointerClick, DollarSign } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAdminProducts } from '@/hooks/useAdminProducts';
 
 export default function Dashboard() {
+  const { fetchProducts } = useAdminProducts();
+  
   const { data: products } = useQuery({
-    queryKey: ['admin-products-count'],
-    queryFn: async () => {
-      const { count } = await supabase.from('products').select('*', { count: 'exact', head: true });
-      return count || 0;
-    }
+    queryKey: ['admin-products'],
+    queryFn: fetchProducts,
   });
 
   const { data: testimonials } = useQuery({
@@ -29,11 +29,42 @@ export default function Dashboard() {
     }
   });
 
+  // Note: Metrics will show once products are created and users interact
+  const { data: metrics } = useQuery({
+    queryKey: ['admin-metrics-summary'],
+    queryFn: async () => {
+      // This will only work for admins with auth
+      try {
+        const { data, error } = await supabase
+          .from('product_metrics')
+          .select('event_type');
+        
+        if (error) {
+          console.log('Metrics not available yet');
+          return { views: 0, cartAdds: 0, purchases: 0 };
+        }
+
+        const views = data?.filter(m => m.event_type === 'view').length || 0;
+        const cartAdds = data?.filter(m => m.event_type === 'cart_add').length || 0;
+        const purchases = data?.filter(m => m.event_type === 'purchase').length || 0;
+
+        return { views, cartAdds, purchases };
+      } catch {
+        return { views: 0, cartAdds: 0, purchases: 0 };
+      }
+    }
+  });
+
   const stats = [
-    { icon: Package, label: 'Produtos', value: products || 0, color: 'bg-primary' },
+    { icon: Package, label: 'Produtos', value: products?.length || 0, color: 'bg-primary' },
     { icon: Star, label: 'Depoimentos', value: testimonials || 0, color: 'bg-secondary' },
     { icon: HelpCircle, label: 'Perguntas FAQ', value: faqs || 0, color: 'bg-mint' },
-    { icon: Eye, label: 'Visualizações', value: '—', color: 'bg-accent' },
+    { icon: Eye, label: 'Visualizações', value: metrics?.views || 0, color: 'bg-accent' },
+  ];
+
+  const metricsStats = [
+    { icon: MousePointerClick, label: 'Adições ao Carrinho', value: metrics?.cartAdds || 0, color: 'bg-peach' },
+    { icon: DollarSign, label: 'Vendas Iniciadas', value: metrics?.purchases || 0, color: 'bg-green-500' },
   ];
 
   return (
@@ -53,6 +84,35 @@ export default function Dashboard() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
+            >
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    {stat.label}
+                  </CardTitle>
+                  <div className={`p-2 rounded-lg ${stat.color}`}>
+                    <Icon className="h-4 w-4 text-white" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stat.value}</div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          );
+        })}
+      </div>
+
+      {/* Metrics Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {metricsStats.map((stat, index) => {
+          const Icon = stat.icon;
+          return (
+            <motion.div
+              key={stat.label}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: (index + 4) * 0.1 }}
             >
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -117,7 +177,8 @@ export default function Dashboard() {
             <p>✅ Todas as alterações são salvas automaticamente no banco de dados</p>
             <p>✅ O site atualiza em tempo real após cada modificação</p>
             <p>✅ O número do WhatsApp fica oculto do público</p>
-            <p>✅ Produtos podem ter múltiplas imagens e PDF anexo</p>
+            <p>✅ Produtos podem ter múltiplas imagens</p>
+            <p>✅ Métricas de visualizações e vendas são registradas automaticamente</p>
             <p>✅ Faça logout quando terminar de editar</p>
           </CardContent>
         </Card>
