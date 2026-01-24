@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/AdminLogin";
+import ProductDetail from "./pages/ProductDetail";
+import Catalog from "./pages/Catalog";
 import { ProtectedRoute } from "./components/admin/ProtectedRoute";
 import { AdminLayout } from "./components/admin/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
@@ -18,6 +20,8 @@ import Testimonials from "./pages/admin/Testimonials";
 import FAQAdmin from "./pages/admin/FAQ";
 import GeneralSettings from "./pages/admin/Settings";
 import Metrics from "./pages/admin/Metrics";
+import Sales from "./pages/admin/Sales";
+import Reviews from "./pages/admin/Reviews";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +33,8 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/catalogo" element={<Catalog />} />
+          <Route path="/produto/:id" element={<ProductDetail />} />
           <Route path="/admin" element={<AdminLogin />} />
           
           {/* Admin Protected Routes */}
@@ -50,6 +56,8 @@ const App = () => (
             <Route path="faq" element={<FAQAdmin />} />
             <Route path="settings" element={<GeneralSettings />} />
             <Route path="metrics" element={<Metrics />} />
+            <Route path="sales" element={<Sales />} />
+            <Route path="reviews" element={<Reviews />} />
           </Route>
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
