@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingCart, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { ShoppingCart, ChevronLeft, ChevronRight, Sparkles, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useCartStore } from '@/store/cartStore';
 import { useProductMetrics } from '@/hooks/useProductMetrics';
 import { toast } from 'sonner';
-
 interface Product {
   id: string;
   title: string;
@@ -24,12 +24,16 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  const navigate = useNavigate();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const [hasTrackedView, setHasTrackedView] = useState(false);
   const { addItem, openCart } = useCartStore();
   const { trackView, trackCartAdd } = useProductMetrics();
 
+  const handleViewProduct = () => {
+    navigate(`/produto/${product.id}`);
+  };
   // Track view when product comes into viewport
   useEffect(() => {
     if (!hasTrackedView) {
@@ -87,7 +91,8 @@ export function ProductCard({ product }: ProductCardProps) {
       transition={{ duration: 0.3 }}
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
-      className="card-product group"
+      className="card-product group cursor-pointer"
+      onClick={handleViewProduct}
     >
       {/* Featured Badge */}
       {product.featured && (
@@ -154,14 +159,20 @@ export function ProductCard({ product }: ProductCardProps) {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: isHovered ? 1 : 0 }}
-          className="absolute inset-0 bg-foreground/10 backdrop-blur-[2px] flex items-center justify-center"
+          className="absolute inset-0 bg-foreground/10 backdrop-blur-[2px] flex items-center justify-center gap-2"
         >
           <Button
-            onClick={handleAddToCart}
+            onClick={(e) => { e.stopPropagation(); handleViewProduct(); }}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl font-bold"
+          >
+            <Eye className="mr-2 h-4 w-4" />
+            Ver
+          </Button>
+          <Button
+            onClick={(e) => { e.stopPropagation(); handleAddToCart(); }}
             className="btn-rainbow rounded-2xl font-bold"
           >
-            <ShoppingCart className="mr-2 h-4 w-4" />
-            Adicionar
+            <ShoppingCart className="h-4 w-4" />
           </Button>
         </motion.div>
       </div>

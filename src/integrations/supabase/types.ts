@@ -76,17 +76,61 @@ export type Database = {
           },
         ]
       }
+      product_reviews: {
+        Row: {
+          active: boolean | null
+          author_name: string
+          content: string
+          created_at: string | null
+          id: string
+          product_id: string
+          rating: number
+        }
+        Insert: {
+          active?: boolean | null
+          author_name: string
+          content: string
+          created_at?: string | null
+          id?: string
+          product_id: string
+          rating: number
+        }
+        Update: {
+          active?: boolean | null
+          author_name?: string
+          content?: string
+          created_at?: string | null
+          id?: string
+          product_id?: string
+          rating?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           active: boolean | null
+          age_range: string | null
           created_at: string | null
           description: string | null
           featured: boolean | null
+          file_format: string | null
+          file_size_mb: number | null
           id: string
           images: string[] | null
+          page_count: number | null
+          paper_format: string | null
           pdf_url: string | null
           price: number
           show_stock: boolean | null
+          show_technical_info: boolean | null
           stock: number | null
           tags: string[] | null
           title: string
@@ -94,14 +138,20 @@ export type Database = {
         }
         Insert: {
           active?: boolean | null
+          age_range?: string | null
           created_at?: string | null
           description?: string | null
           featured?: boolean | null
+          file_format?: string | null
+          file_size_mb?: number | null
           id?: string
           images?: string[] | null
+          page_count?: number | null
+          paper_format?: string | null
           pdf_url?: string | null
           price?: number
           show_stock?: boolean | null
+          show_technical_info?: boolean | null
           stock?: number | null
           tags?: string[] | null
           title: string
@@ -109,20 +159,79 @@ export type Database = {
         }
         Update: {
           active?: boolean | null
+          age_range?: string | null
           created_at?: string | null
           description?: string | null
           featured?: boolean | null
+          file_format?: string | null
+          file_size_mb?: number | null
           id?: string
           images?: string[] | null
+          page_count?: number | null
+          paper_format?: string | null
           pdf_url?: string | null
           price?: number
           show_stock?: boolean | null
+          show_technical_info?: boolean | null
           stock?: number | null
           tags?: string[] | null
           title?: string
           updated_at?: string | null
         }
         Relationships: []
+      }
+      sales: {
+        Row: {
+          created_at: string | null
+          customer_phone: string | null
+          id: string
+          notes: string | null
+          product_id: string | null
+          product_price: number
+          product_title: string
+          quantity: number | null
+          sale_code: string
+          session_id: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          customer_phone?: string | null
+          id?: string
+          notes?: string | null
+          product_id?: string | null
+          product_price: number
+          product_title: string
+          quantity?: number | null
+          sale_code: string
+          session_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          customer_phone?: string | null
+          id?: string
+          notes?: string | null
+          product_id?: string | null
+          product_price?: number
+          product_title?: string
+          quantity?: number | null
+          sale_code?: string
+          session_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       settings_history: {
         Row: {
