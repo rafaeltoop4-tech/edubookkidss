@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Search, Filter } from 'lucide-react';
+import { Sparkles, Search, Filter, Package } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ProductCard } from './ProductCard';
@@ -17,52 +17,8 @@ interface Product {
   featured: boolean;
 }
 
-// Demo products for initial display
-const demoProducts: Product[] = [
-  {
-    id: '1',
-    title: 'Ebook Alfabetização Divertida',
-    description: 'Aprenda o alfabeto com atividades coloridas e jogos interativos para crianças de 3 a 6 anos.',
-    price: 29.90,
-    images: ['/placeholder.svg'],
-    tags: ['Alfabetização', '3-6 anos'],
-    stock: 100,
-    featured: true,
-  },
-  {
-    id: '2',
-    title: 'Kit Matemática Brincando',
-    description: 'Números, formas e primeiras operações matemáticas através de brincadeiras educativas.',
-    price: 34.90,
-    images: ['/placeholder.svg'],
-    tags: ['Matemática', '4-7 anos'],
-    stock: 50,
-    featured: true,
-  },
-  {
-    id: '3',
-    title: 'Atividades de Coordenação Motora',
-    description: 'Exercícios para desenvolver a coordenação motora fina e preparar para a escrita.',
-    price: 24.90,
-    images: ['/placeholder.svg'],
-    tags: ['Motor', '2-5 anos'],
-    stock: 75,
-    featured: false,
-  },
-  {
-    id: '4',
-    title: 'Histórias para Colorir',
-    description: 'Lindas histórias ilustradas para colorir e estimular a criatividade e imaginação.',
-    price: 19.90,
-    images: ['/placeholder.svg'],
-    tags: ['Colorir', 'Criatividade'],
-    stock: 200,
-    featured: false,
-  },
-];
-
 export function ProductsSection() {
-  const [products, setProducts] = useState<Product[]>(demoProducts);
+  const [products, setProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -82,8 +38,19 @@ export function ProductsSection() {
 
       if (error) throw error;
       
-      if (data && data.length > 0) {
-        setProducts(data);
+      if (data) {
+        // Map database fields to component interface
+        const mappedProducts = data.map(p => ({
+          id: p.id,
+          title: p.title,
+          description: p.description,
+          price: p.price,
+          images: p.images || [],
+          tags: p.tags || [],
+          stock: p.stock || 0,
+          featured: p.featured || false
+        }));
+        setProducts(mappedProducts);
       }
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -101,6 +68,11 @@ export function ProductsSection() {
     const matchesTag = !selectedTag || product.tags.includes(selectedTag);
     return matchesSearch && matchesTag;
   });
+
+  // Don't render section if no products exist
+  if (!isLoading && products.length === 0) {
+    return null;
+  }
 
   return (
     <section id="produtos" className="py-16 md:py-24 bg-muted/50">
@@ -174,13 +146,14 @@ export function ProductsSection() {
           ))}
         </div>
 
-        {/* Empty State */}
-        {filteredProducts.length === 0 && (
+        {/* Empty State - Only when filtering */}
+        {filteredProducts.length === 0 && products.length > 0 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="text-center py-16"
           >
+            <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <p className="text-muted-foreground text-lg">
               Nenhum produto encontrado 😢
             </p>
@@ -188,6 +161,14 @@ export function ProductsSection() {
               Tente buscar com outros termos ou remova os filtros.
             </p>
           </motion.div>
+        )}
+
+        {/* Loading State */}
+        {isLoading && (
+          <div className="text-center py-16">
+            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Carregando produtos...</p>
+          </div>
         )}
       </div>
     </section>

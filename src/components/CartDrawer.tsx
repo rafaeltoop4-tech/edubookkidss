@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Minus, Plus, Trash2, ShoppingBag, MessageCircle, Send, Phone, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useCartStore } from '@/store/cartStore';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
@@ -29,8 +30,29 @@ export function CartDrawer() {
   const [customerPhone, setCustomerPhone] = useState('');
   const [showPreview, setShowPreview] = useState(false);
   const [errors, setErrors] = useState<{ name?: string; phone?: string }>({});
+  const [whatsappNumber, setWhatsappNumber] = useState('5574999581805');
 
   const totalPrice = getTotalPrice();
+
+  // Fetch WhatsApp number from admin settings
+  useEffect(() => {
+    const fetchWhatsAppNumber = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('site_settings')
+          .select('value')
+          .eq('key', 'whatsapp_number')
+          .single();
+        
+        if (!error && data?.value) {
+          setWhatsappNumber(data.value as string);
+        }
+      } catch (error) {
+        console.error('Error fetching WhatsApp number:', error);
+      }
+    };
+    fetchWhatsAppNumber();
+  }, []);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -90,7 +112,6 @@ export function CartDrawer() {
 
   const handleSendWhatsApp = () => {
     const message = encodeURIComponent(generateWhatsAppMessage());
-    const whatsappNumber = '5574999581805';
     const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
     
     window.open(whatsappUrl, '_blank');
