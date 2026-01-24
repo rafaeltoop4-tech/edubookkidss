@@ -1,92 +1,77 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Pencil, Trash2, Package, Image, Save, X, ImagePlus, Trash } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Plus, Pencil, Trash2, Package, Image, Save, X, Upload, Loader2, Eye, EyeOff, BarChart3 } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-
-interface Product {
-  id: string;
-  title: string;
-  description: string | null;
-  price: number;
-  images: string[] | null;
-  tags: string[] | null;
-  stock: number | null;
-  active: boolean | null;
-  featured: boolean | null;
-}
+import { useAdminProducts, Product, ProductInput } from '@/hooks/useAdminProducts';
 
 export default function Products() {
   const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { fetchProducts, createProduct, updateProduct, deleteProduct, uploadImage, loading: hookLoading } = useAdminProducts();
+  
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [uploadingImages, setUploadingImages] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     price: '',
     images: [] as string[],
-    newImageUrl: '',
     tags: '',
     stock: '9999',
+    show_stock: true,
     active: true,
     featured: false
   });
 
   const { data: products, isLoading } = useQuery({
     queryKey: ['admin-products'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data as Product[];
-    }
+    queryFn: fetchProducts,
   });
 
   const saveMutation = useMutation({
-    mutationFn: async (data: Omit<Product, 'id' | 'created_at' | 'updated_at'>) => {
+    mutationFn: async (data: ProductInput) => {
       if (editingProduct) {
-        const { error } = await supabase
-          .from('products')
-          .update(data)
-          .eq('id', editingProduct.id);
-        if (error) throw error;
+        return await updateProduct(editingProduct.id, data);
       } else {
-        const { error } = await supabase.from('products').insert([data]);
-        if (error) throw error;
+        return await createProduct(data);
       }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-products'] });
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      toast.success(editingProduct ? 'Produto atualizado!' : 'Produto criado!');
-      resetForm();
+    onSuccess: (result) => {
+      if (result) {
+        queryClient.invalidateQueries({ queryKey: ['admin-products'] });
+        queryClient.invalidateQueries({ queryKey: ['products'] });
+        toast.success(editingProduct ? 'Produto atualizado!' : 'Produto criado!');
+        resetForm();
+      } else {
+        toast.error('Erro ao salvar produto');
+      }
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast.error('Erro ao salvar produto: ' + error.message);
     }
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('products').delete().eq('id', id);
-      if (error) throw error;
+    mutationFn: deleteProduct,
+    onSuccess: (success) => {
+      if (success) {
+        queryClient.invalidateQueries({ queryKey: ['admin-products'] });
+        queryClient.invalidateQueries({ queryKey: ['products'] });
+        toast.success('Produto excluído!');
+      } else {
+        toast.error('Erro ao excluir produto');
+      }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-products'] });
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      toast.success('Produto excluído!');
-    },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast.error('Erro ao excluir: ' + error.message);
     }
   });
@@ -97,9 +82,9 @@ export default function Products() {
       description: '',
       price: '',
       images: [],
-      newImageUrl: '',
       tags: '',
       stock: '9999',
+      show_stock: true,
       active: true,
       featured: false
     });
@@ -114,42 +99,70 @@ export default function Products() {
       description: product.description || '',
       price: product.price.toString(),
       images: product.images || [],
-      newImageUrl: '',
       tags: product.tags?.join(', ') || '',
       stock: (product.stock || 9999).toString(),
+      show_stock: product.show_stock ?? true,
       active: product.active ?? true,
       featured: product.featured ?? false
     });
     setIsDialogOpen(true);
   };
 
-  const addImage = () => {
-    if (formData.newImageUrl.trim()) {
-      setFormData({
-        ...formData,
-        images: [...formData.images, formData.newImageUrl.trim()],
-        newImageUrl: ''
-      });
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploadingImages(true);
+    const newImages: string[] = [];
+
+    try {
+      for (const file of Array.from(files)) {
+        if (!file.type.startsWith('image/')) {
+          toast.error(`${file.name} não é uma imagem válida`);
+          continue;
+        }
+
+        const url = await uploadImage(file);
+        if (url) {
+          newImages.push(url);
+        }
+      }
+
+      if (newImages.length > 0) {
+        setFormData(prev => ({
+          ...prev,
+          images: [...prev.images, ...newImages]
+        }));
+        toast.success(`${newImages.length} imagem(s) enviada(s)!`);
+      }
+    } catch (error) {
+      toast.error('Erro ao enviar imagens');
+    } finally {
+      setUploadingImages(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
   const removeImage = (index: number) => {
-    setFormData({
-      ...formData,
-      images: formData.images.filter((_, i) => i !== index)
-    });
+    setFormData(prev => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index)
+    }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    const data = {
+    const data: ProductInput = {
       title: formData.title,
       description: formData.description || null,
       price: parseFloat(formData.price) || 0,
-      images: formData.images.length > 0 ? formData.images : null,
-      tags: formData.tags ? formData.tags.split(',').map(s => s.trim()).filter(Boolean) : null,
+      images: formData.images,
+      tags: formData.tags ? formData.tags.split(',').map(s => s.trim()).filter(Boolean) : [],
       stock: parseInt(formData.stock) || 9999,
+      show_stock: formData.show_stock,
       active: formData.active,
       featured: formData.featured
     };
@@ -214,9 +227,25 @@ export default function Products() {
                     type="number"
                     value={formData.stock}
                     onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
-                    placeholder="10"
+                    placeholder="9999"
                   />
                 </div>
+                
+                {/* Stock visibility toggle */}
+                <div className="col-span-2 flex items-center gap-4 p-3 bg-muted/50 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={formData.show_stock}
+                      onCheckedChange={(checked) => setFormData({ ...formData, show_stock: checked })}
+                    />
+                    <Label className="flex items-center gap-2">
+                      {formData.show_stock ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                      {formData.show_stock ? 'Mostrar estoque ao cliente' : 'Ocultar estoque do cliente'}
+                    </Label>
+                  </div>
+                </div>
+
+                {/* Image Upload */}
                 <div className="col-span-2">
                   <Label className="flex items-center gap-2 mb-2">
                     <Image className="h-4 w-4" />
@@ -238,34 +267,46 @@ export default function Products() {
                             onClick={() => removeImage(index)}
                             className="absolute -top-2 -right-2 p-1 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                           >
-                            <Trash className="h-3 w-3" />
+                            <Trash2 className="h-3 w-3" />
                           </button>
                         </div>
                       ))}
                     </div>
                   )}
                   
-                  {/* Add New Image */}
-                  <div className="flex gap-2">
-                    <Input
-                      value={formData.newImageUrl}
-                      onChange={(e) => setFormData({ ...formData, newImageUrl: e.target.value })}
-                      placeholder="Cole a URL da imagem aqui"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          addImage();
-                        }
-                      }}
-                    />
-                    <Button type="button" variant="outline" onClick={addImage}>
-                      <ImagePlus className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  {/* Upload Button */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingImages}
+                    className="w-full border-dashed"
+                  >
+                    {uploadingImages ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Enviando...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="mr-2 h-4 w-4" />
+                        Fazer upload de imagens
+                      </>
+                    )}
+                  </Button>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Adicione várias imagens para criar uma galeria do produto
+                    Clique para selecionar imagens do seu dispositivo. Múltiplas imagens permitidas.
                   </p>
                 </div>
+
                 <div className="col-span-2">
                   <Label>Faixa Etária (opcional)</Label>
                   <Input
@@ -277,13 +318,14 @@ export default function Products() {
                     Separe as tags por vírgula. A faixa etária será exibida apenas se preenchida.
                   </p>
                 </div>
-                <div className="flex items-center gap-4">
+
+                <div className="flex items-center gap-6">
                   <div className="flex items-center gap-2">
                     <Switch
                       checked={formData.active}
                       onCheckedChange={(checked) => setFormData({ ...formData, active: checked })}
                     />
-                    <Label>Ativo</Label>
+                    <Label>Produto Ativo</Label>
                   </div>
                   <div className="flex items-center gap-2">
                     <Switch
@@ -299,7 +341,7 @@ export default function Products() {
                   <X className="mr-2 h-4 w-4" />
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={saveMutation.isPending}>
+                <Button type="submit" disabled={saveMutation.isPending || hookLoading}>
                   <Save className="mr-2 h-4 w-4" />
                   {saveMutation.isPending ? 'Salvando...' : 'Salvar'}
                 </Button>
@@ -310,7 +352,10 @@ export default function Products() {
       </div>
 
       {isLoading ? (
-        <div className="text-center py-12 text-muted-foreground">Carregando...</div>
+        <div className="text-center py-12 text-muted-foreground">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
+          Carregando...
+        </div>
       ) : products?.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
@@ -345,7 +390,7 @@ export default function Products() {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="font-medium truncate">{product.title}</h3>
                         {product.featured && (
                           <span className="px-2 py-0.5 bg-secondary text-secondary-foreground text-xs rounded-full">
@@ -353,23 +398,32 @@ export default function Products() {
                           </span>
                         )}
                         {!product.active && (
-                          <span className="px-2 py-0.5 bg-muted text-muted-foreground text-xs rounded-full">
+                          <span className="px-2 py-0.5 bg-destructive/10 text-destructive text-xs rounded-full">
                             Inativo
+                          </span>
+                        )}
+                        {product.active && (
+                          <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">
+                            Ativo
                           </span>
                         )}
                       </div>
                       <p className="text-sm text-muted-foreground truncate">
                         {product.description || 'Sem descrição'}
                       </p>
-                      <div className="flex items-center gap-4 mt-1 text-sm">
+                      <div className="flex items-center gap-4 mt-1 text-sm flex-wrap">
                         <span className="font-bold text-primary">
                           R$ {product.price.toFixed(2)}
                         </span>
                         <span className="text-muted-foreground">
                           {product.images?.length || 0} imagens
                         </span>
-                        <span className="text-muted-foreground">
-                          Estoque: {product.stock ?? 9999}
+                        <span className="text-muted-foreground flex items-center gap-1">
+                          {product.show_stock ? (
+                            <>Estoque: {product.stock ?? 9999}</>
+                          ) : (
+                            <><EyeOff className="h-3 w-3" /> Estoque oculto</>
+                          )}
                         </span>
                       </div>
                     </div>

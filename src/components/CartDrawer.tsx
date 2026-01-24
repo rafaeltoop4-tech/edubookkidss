@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useCartStore } from '@/store/cartStore';
+import { useProductMetrics } from '@/hooks/useProductMetrics';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -31,6 +32,8 @@ export function CartDrawer() {
   const [showPreview, setShowPreview] = useState(false);
   const [errors, setErrors] = useState<{ name?: string; phone?: string }>({});
   const [whatsappNumber, setWhatsappNumber] = useState('5574999581805');
+
+  const { trackPurchase } = useProductMetrics();
 
   const totalPrice = getTotalPrice();
 
@@ -111,6 +114,11 @@ export function CartDrawer() {
   };
 
   const handleSendWhatsApp = () => {
+    // Track purchase events for all items
+    items.forEach(item => {
+      trackPurchase(item.id, item.quantity);
+    });
+    
     const message = encodeURIComponent(generateWhatsAppMessage());
     const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
     

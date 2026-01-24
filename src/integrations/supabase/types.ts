@@ -41,6 +41,41 @@ export type Database = {
         }
         Relationships: []
       }
+      product_metrics: {
+        Row: {
+          created_at: string | null
+          event_type: string
+          id: string
+          product_id: string
+          quantity: number | null
+          session_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_type: string
+          id?: string
+          product_id: string
+          quantity?: number | null
+          session_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event_type?: string
+          id?: string
+          product_id?: string
+          quantity?: number | null
+          session_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_metrics_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           active: boolean | null
@@ -51,6 +86,7 @@ export type Database = {
           images: string[] | null
           pdf_url: string | null
           price: number
+          show_stock: boolean | null
           stock: number | null
           tags: string[] | null
           title: string
@@ -65,6 +101,7 @@ export type Database = {
           images?: string[] | null
           pdf_url?: string | null
           price?: number
+          show_stock?: boolean | null
           stock?: number | null
           tags?: string[] | null
           title: string
@@ -79,6 +116,7 @@ export type Database = {
           images?: string[] | null
           pdf_url?: string | null
           price?: number
+          show_stock?: boolean | null
           stock?: number | null
           tags?: string[] | null
           title?: string

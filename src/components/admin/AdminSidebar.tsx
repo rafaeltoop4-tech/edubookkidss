@@ -11,7 +11,8 @@ import {
   Home,
   FileText,
   Star,
-  HelpCircle
+  HelpCircle,
+  BarChart3
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
@@ -21,6 +22,7 @@ import { toast } from 'sonner';
 const menuItems = [
   { icon: LayoutGrid, label: 'Dashboard', path: '/admin/dashboard' },
   { icon: Package, label: 'Produtos', path: '/admin/products' },
+  { icon: BarChart3, label: 'Métricas', path: '/admin/metrics' },
   { icon: MessageCircle, label: 'WhatsApp', path: '/admin/whatsapp' },
   { icon: Palette, label: 'Layout & Cores', path: '/admin/layout' },
   { icon: Home, label: 'Cabeçalho', path: '/admin/header' },
