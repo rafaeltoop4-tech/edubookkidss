@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Pencil, Trash2, Package, Image, FileText, Save, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, Package, Image, Save, X, ImagePlus, Trash } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,7 +18,6 @@ interface Product {
   description: string | null;
   price: number;
   images: string[] | null;
-  pdf_url: string | null;
   tags: string[] | null;
   stock: number | null;
   active: boolean | null;
@@ -33,10 +32,10 @@ export default function Products() {
     title: '',
     description: '',
     price: '',
-    images: '',
-    pdf_url: '',
+    images: [] as string[],
+    newImageUrl: '',
     tags: '',
-    stock: '10',
+    stock: '9999',
     active: true,
     featured: false
   });
@@ -97,10 +96,10 @@ export default function Products() {
       title: '',
       description: '',
       price: '',
-      images: '',
-      pdf_url: '',
+      images: [],
+      newImageUrl: '',
       tags: '',
-      stock: '10',
+      stock: '9999',
       active: true,
       featured: false
     });
@@ -114,14 +113,31 @@ export default function Products() {
       title: product.title,
       description: product.description || '',
       price: product.price.toString(),
-      images: product.images?.join(', ') || '',
-      pdf_url: product.pdf_url || '',
+      images: product.images || [],
+      newImageUrl: '',
       tags: product.tags?.join(', ') || '',
-      stock: (product.stock || 10).toString(),
+      stock: (product.stock || 9999).toString(),
       active: product.active ?? true,
       featured: product.featured ?? false
     });
     setIsDialogOpen(true);
+  };
+
+  const addImage = () => {
+    if (formData.newImageUrl.trim()) {
+      setFormData({
+        ...formData,
+        images: [...formData.images, formData.newImageUrl.trim()],
+        newImageUrl: ''
+      });
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setFormData({
+      ...formData,
+      images: formData.images.filter((_, i) => i !== index)
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -131,10 +147,9 @@ export default function Products() {
       title: formData.title,
       description: formData.description || null,
       price: parseFloat(formData.price) || 0,
-      images: formData.images ? formData.images.split(',').map(s => s.trim()).filter(Boolean) : null,
-      pdf_url: formData.pdf_url || null,
+      images: formData.images.length > 0 ? formData.images : null,
       tags: formData.tags ? formData.tags.split(',').map(s => s.trim()).filter(Boolean) : null,
-      stock: parseInt(formData.stock) || 10,
+      stock: parseInt(formData.stock) || 9999,
       active: formData.active,
       featured: formData.featured
     };
@@ -203,35 +218,64 @@ export default function Products() {
                   />
                 </div>
                 <div className="col-span-2">
-                  <Label className="flex items-center gap-2">
+                  <Label className="flex items-center gap-2 mb-2">
                     <Image className="h-4 w-4" />
-                    URLs das Imagens (separadas por vírgula)
+                    Imagens do Produto (Galeria)
                   </Label>
-                  <Textarea
-                    value={formData.images}
-                    onChange={(e) => setFormData({ ...formData, images: e.target.value })}
-                    placeholder="https://exemplo.com/imagem1.jpg, https://exemplo.com/imagem2.jpg"
-                    rows={2}
-                  />
+                  
+                  {/* Current Images */}
+                  {formData.images.length > 0 && (
+                    <div className="grid grid-cols-4 gap-2 mb-3">
+                      {formData.images.map((img, index) => (
+                        <div key={index} className="relative group">
+                          <img 
+                            src={img} 
+                            alt={`Imagem ${index + 1}`}
+                            className="w-full aspect-square object-cover rounded-lg border"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="absolute -top-2 -right-2 p-1 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <Trash className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* Add New Image */}
+                  <div className="flex gap-2">
+                    <Input
+                      value={formData.newImageUrl}
+                      onChange={(e) => setFormData({ ...formData, newImageUrl: e.target.value })}
+                      placeholder="Cole a URL da imagem aqui"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          addImage();
+                        }
+                      }}
+                    />
+                    <Button type="button" variant="outline" onClick={addImage}>
+                      <ImagePlus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Adicione várias imagens para criar uma galeria do produto
+                  </p>
                 </div>
                 <div className="col-span-2">
-                  <Label className="flex items-center gap-2">
-                    <FileText className="h-4 w-4" />
-                    URL do PDF
-                  </Label>
-                  <Input
-                    value={formData.pdf_url}
-                    onChange={(e) => setFormData({ ...formData, pdf_url: e.target.value })}
-                    placeholder="https://exemplo.com/ebook.pdf"
-                  />
-                </div>
-                <div className="col-span-2">
-                  <Label>Tags (separadas por vírgula)</Label>
+                  <Label>Faixa Etária (opcional)</Label>
                   <Input
                     value={formData.tags}
                     onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                    placeholder="ebook, atividades, matemática"
+                    placeholder="Ex: 3-6 anos, Alfabetização, Matemática"
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Separe as tags por vírgula. A faixa etária será exibida apenas se preenchida.
+                  </p>
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
@@ -324,9 +368,9 @@ export default function Products() {
                         <span className="text-muted-foreground">
                           {product.images?.length || 0} imagens
                         </span>
-                        {product.pdf_url && (
-                          <span className="text-mint">PDF anexo</span>
-                        )}
+                        <span className="text-muted-foreground">
+                          Estoque: {product.stock ?? 9999}
+                        </span>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
