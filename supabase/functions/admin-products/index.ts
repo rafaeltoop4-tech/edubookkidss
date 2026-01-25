@@ -7,7 +7,7 @@ const corsHeaders = {
 
 // Admin credentials validation via environment variables (server-side only)
 const ADMIN_USERNAME = Deno.env.get('ADMIN_USERNAME') || 'Prooadmin'
-const ADMIN_PASSWORD = Deno.env.get('ADMIN_PASSWORD') || 'Rafa31200'
+const ADMIN_PASSWORD = Deno.env.get('ADMIN_PASSWORD') || 'ACESSORESTRITO'
 
 function validateAdmin(authHeader: string | null): boolean {
   if (!authHeader) return false
