@@ -1,12 +1,13 @@
 import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Pencil, Trash2, Package, Image, Save, X, Upload, Loader2, Eye, EyeOff, BarChart3 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Package, Image, Save, X, Upload, Loader2, Eye, EyeOff, FileText, Accessibility } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -29,7 +30,17 @@ export default function Products() {
     stock: '9999',
     show_stock: true,
     active: true,
-    featured: false
+    featured: false,
+    // Technical info
+    page_count: '',
+    file_format: 'PDF',
+    file_size_mb: '',
+    paper_format: 'A4',
+    show_technical_info: false,
+    age_range: '',
+    // Accessibility
+    is_accessible: false,
+    show_accessibility: false,
   });
 
   const { data: products, isLoading } = useQuery({
@@ -86,7 +97,15 @@ export default function Products() {
       stock: '9999',
       show_stock: true,
       active: true,
-      featured: false
+      featured: false,
+      page_count: '',
+      file_format: 'PDF',
+      file_size_mb: '',
+      paper_format: 'A4',
+      show_technical_info: false,
+      age_range: '',
+      is_accessible: false,
+      show_accessibility: false,
     });
     setEditingProduct(null);
     setIsDialogOpen(false);
@@ -103,7 +122,15 @@ export default function Products() {
       stock: (product.stock || 9999).toString(),
       show_stock: product.show_stock ?? true,
       active: product.active ?? true,
-      featured: product.featured ?? false
+      featured: product.featured ?? false,
+      page_count: product.page_count?.toString() || '',
+      file_format: product.file_format || 'PDF',
+      file_size_mb: product.file_size_mb?.toString() || '',
+      paper_format: product.paper_format || 'A4',
+      show_technical_info: product.show_technical_info ?? false,
+      age_range: product.age_range || '',
+      is_accessible: product.is_accessible ?? false,
+      show_accessibility: product.show_accessibility ?? false,
     });
     setIsDialogOpen(true);
   };
@@ -164,22 +191,41 @@ export default function Products() {
       stock: parseInt(formData.stock) || 9999,
       show_stock: formData.show_stock,
       active: formData.active,
-      featured: formData.featured
+      featured: formData.featured,
+      page_count: formData.page_count ? parseInt(formData.page_count) : null,
+      file_format: formData.file_format || null,
+      file_size_mb: formData.file_size_mb ? parseFloat(formData.file_size_mb) : null,
+      paper_format: formData.paper_format || null,
+      show_technical_info: formData.show_technical_info,
+      age_range: formData.age_range || null,
+      is_accessible: formData.is_accessible,
+      show_accessibility: formData.show_accessibility,
     };
 
     saveMutation.mutate(data);
   };
 
+  const handleToggleActive = async (product: Product) => {
+    const result = await updateProduct(product.id, { active: !product.active });
+    if (result) {
+      queryClient.invalidateQueries({ queryKey: ['admin-products'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      toast.success(product.active ? 'Produto desativado!' : 'Produto ativado!');
+    } else {
+      toast.error('Erro ao alterar status do produto');
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="font-fredoka text-3xl font-bold">Produtos</h1>
-          <p className="text-muted-foreground">Gerencie seus ebooks e atividades</p>
+          <h1 className="font-fredoka text-2xl md:text-3xl font-bold">Produtos</h1>
+          <p className="text-muted-foreground text-sm md:text-base">Gerencie seus ebooks e atividades</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => { resetForm(); setIsDialogOpen(true); }} className="btn-rainbow">
+            <Button onClick={() => { resetForm(); setIsDialogOpen(true); }} className="btn-rainbow w-full sm:w-auto">
               <Plus className="mr-2 h-4 w-4" />
               Novo Produto
             </Button>
@@ -191,8 +237,9 @@ export default function Products() {
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Basic Info */}
+                <div className="col-span-1 md:col-span-2">
                   <Label>Título *</Label>
                   <Input
                     value={formData.title}
@@ -201,7 +248,7 @@ export default function Products() {
                     required
                   />
                 </div>
-                <div className="col-span-2">
+                <div className="col-span-1 md:col-span-2">
                   <Label>Descrição</Label>
                   <Textarea
                     value={formData.description}
@@ -232,13 +279,13 @@ export default function Products() {
                 </div>
                 
                 {/* Stock visibility toggle */}
-                <div className="col-span-2 flex items-center gap-4 p-3 bg-muted/50 rounded-lg">
+                <div className="col-span-1 md:col-span-2 flex items-center gap-4 p-3 bg-muted/50 rounded-lg">
                   <div className="flex items-center gap-2">
                     <Switch
                       checked={formData.show_stock}
                       onCheckedChange={(checked) => setFormData({ ...formData, show_stock: checked })}
                     />
-                    <Label className="flex items-center gap-2">
+                    <Label className="flex items-center gap-2 cursor-pointer">
                       {formData.show_stock ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                       {formData.show_stock ? 'Mostrar estoque ao cliente' : 'Ocultar estoque do cliente'}
                     </Label>
@@ -246,7 +293,7 @@ export default function Products() {
                 </div>
 
                 {/* Image Upload */}
-                <div className="col-span-2">
+                <div className="col-span-1 md:col-span-2">
                   <Label className="flex items-center gap-2 mb-2">
                     <Image className="h-4 w-4" />
                     Imagens do Produto (Galeria)
@@ -254,7 +301,7 @@ export default function Products() {
                   
                   {/* Current Images */}
                   {formData.images.length > 0 && (
-                    <div className="grid grid-cols-4 gap-2 mb-3">
+                    <div className="grid grid-cols-3 md:grid-cols-4 gap-2 mb-3">
                       {formData.images.map((img, index) => (
                         <div key={index} className="relative group">
                           <img 
@@ -307,41 +354,146 @@ export default function Products() {
                   </p>
                 </div>
 
-                <div className="col-span-2">
+                <div className="col-span-1 md:col-span-2">
                   <Label>Faixa Etária (opcional)</Label>
+                  <Input
+                    value={formData.age_range}
+                    onChange={(e) => setFormData({ ...formData, age_range: e.target.value })}
+                    placeholder="Ex: 3 a 6 anos"
+                  />
+                </div>
+
+                <div className="col-span-1 md:col-span-2">
+                  <Label>Tags (opcional)</Label>
                   <Input
                     value={formData.tags}
                     onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                    placeholder="Ex: 3-6 anos, Alfabetização, Matemática"
+                    placeholder="Ex: Alfabetização, Matemática, Coordenação"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Separe as tags por vírgula. A faixa etária será exibida apenas se preenchida.
+                    Separe as tags por vírgula.
                   </p>
                 </div>
 
-                <div className="flex items-center gap-6">
+                <div className="col-span-1 md:col-span-2 flex flex-wrap items-center gap-4 md:gap-6">
                   <div className="flex items-center gap-2">
                     <Switch
                       checked={formData.active}
                       onCheckedChange={(checked) => setFormData({ ...formData, active: checked })}
                     />
-                    <Label>Produto Ativo</Label>
+                    <Label className="cursor-pointer">Produto Ativo</Label>
                   </div>
                   <div className="flex items-center gap-2">
                     <Switch
                       checked={formData.featured}
                       onCheckedChange={(checked) => setFormData({ ...formData, featured: checked })}
                     />
-                    <Label>Destaque</Label>
+                    <Label className="cursor-pointer">Destaque</Label>
+                  </div>
+                </div>
+
+                {/* Technical Info Section */}
+                <div className="col-span-1 md:col-span-2">
+                  <Separator className="my-4" />
+                  <div className="flex items-center gap-2 mb-4">
+                    <FileText className="h-5 w-5 text-primary" />
+                    <h3 className="font-semibold">Informações Técnicas</h3>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg mb-4">
+                    <Switch
+                      checked={formData.show_technical_info}
+                      onCheckedChange={(checked) => setFormData({ ...formData, show_technical_info: checked })}
+                    />
+                    <Label className="flex items-center gap-2 cursor-pointer">
+                      {formData.show_technical_info ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                      {formData.show_technical_info ? 'Exibir informações técnicas ao cliente' : 'Ocultar informações técnicas'}
+                    </Label>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Quantidade de Páginas</Label>
+                      <Input
+                        type="number"
+                        value={formData.page_count}
+                        onChange={(e) => setFormData({ ...formData, page_count: e.target.value })}
+                        placeholder="Ex: 80"
+                      />
+                    </div>
+                    <div>
+                      <Label>Formato do Arquivo</Label>
+                      <Input
+                        value={formData.file_format}
+                        onChange={(e) => setFormData({ ...formData, file_format: e.target.value })}
+                        placeholder="Ex: PDF"
+                      />
+                    </div>
+                    <div>
+                      <Label>Tamanho do Arquivo (MB)</Label>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        value={formData.file_size_mb}
+                        onChange={(e) => setFormData({ ...formData, file_size_mb: e.target.value })}
+                        placeholder="Ex: 12.5"
+                      />
+                    </div>
+                    <div>
+                      <Label>Formato da Folha</Label>
+                      <Input
+                        value={formData.paper_format}
+                        onChange={(e) => setFormData({ ...formData, paper_format: e.target.value })}
+                        placeholder="Ex: A4"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Accessibility Section */}
+                <div className="col-span-1 md:col-span-2">
+                  <Separator className="my-4" />
+                  <div className="flex items-center gap-2 mb-4">
+                    <Accessibility className="h-5 w-5 text-primary" />
+                    <h3 className="font-semibold">Acessibilidade Educacional</h3>
+                  </div>
+                  
+                  <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={formData.is_accessible}
+                        onCheckedChange={(checked) => setFormData({ ...formData, is_accessible: checked })}
+                      />
+                      <Label className="cursor-pointer">
+                        Produto com recursos de acessibilidade
+                      </Label>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Marque se o produto é adaptado para pessoas com deficiências diversas (acessibilidade educacional e cognitiva).
+                    </p>
+                    
+                    {formData.is_accessible && (
+                      <div className="flex items-center gap-2 pt-2 border-t">
+                        <Switch
+                          checked={formData.show_accessibility}
+                          onCheckedChange={(checked) => setFormData({ ...formData, show_accessibility: checked })}
+                        />
+                        <Label className="flex items-center gap-2 cursor-pointer">
+                          {formData.show_accessibility ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                          Exibir selo de acessibilidade ao cliente
+                        </Label>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={resetForm}>
+
+              <div className="flex flex-col sm:flex-row justify-end gap-2">
+                <Button type="button" variant="outline" onClick={resetForm} className="w-full sm:w-auto">
                   <X className="mr-2 h-4 w-4" />
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={saveMutation.isPending || hookLoading}>
+                <Button type="submit" disabled={saveMutation.isPending || hookLoading} className="w-full sm:w-auto">
                   <Save className="mr-2 h-4 w-4" />
                   {saveMutation.isPending ? 'Salvando...' : 'Salvar'}
                 </Button>
@@ -374,9 +526,9 @@ export default function Products() {
               transition={{ delay: index * 0.05 }}
             >
               <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 bg-muted rounded-xl overflow-hidden flex-shrink-0">
+                <CardContent className="p-3 md:p-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 md:gap-4">
+                    <div className="w-full sm:w-16 h-32 sm:h-16 bg-muted rounded-xl overflow-hidden flex-shrink-0">
                       {product.images?.[0] ? (
                         <img 
                           src={product.images[0]} 
@@ -389,7 +541,7 @@ export default function Products() {
                         </div>
                       )}
                     </div>
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 w-full">
                       <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="font-medium truncate">{product.title}</h3>
                         {product.featured && (
@@ -405,6 +557,12 @@ export default function Products() {
                         {product.active && (
                           <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">
                             Ativo
+                          </span>
+                        )}
+                        {product.is_accessible && (
+                          <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full flex items-center gap-1">
+                            <Accessibility className="h-3 w-3" />
+                            Acessível
                           </span>
                         )}
                       </div>
@@ -427,7 +585,15 @@ export default function Products() {
                         </span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleToggleActive(product)}
+                        className={product.active ? 'text-orange-600 hover:text-orange-700' : 'text-green-600 hover:text-green-700'}
+                      >
+                        {product.active ? 'Desativar' : 'Ativar'}
+                      </Button>
                       <Button
                         variant="outline"
                         size="icon"

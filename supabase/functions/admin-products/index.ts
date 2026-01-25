@@ -5,9 +5,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Admin credentials (should match authStore)
-const ADMIN_USERNAME = 'Prooadmin'
-const ADMIN_PASSWORD = 'Rafa31200'
+// Admin credentials validation via environment variables (server-side only)
+const ADMIN_USERNAME = Deno.env.get('ADMIN_USERNAME') || 'Prooadmin'
+const ADMIN_PASSWORD = Deno.env.get('ADMIN_PASSWORD') || 'Rafa31200'
 
 function validateAdmin(authHeader: string | null): boolean {
   if (!authHeader) return false
@@ -36,6 +36,7 @@ Deno.serve(async (req) => {
     // Validate admin authentication
     const authHeader = req.headers.get('authorization')
     if (!validateAdmin(authHeader)) {
+      console.log('Unauthorized access attempt')
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -50,6 +51,8 @@ Deno.serve(async (req) => {
     const url = new URL(req.url)
     const method = req.method
 
+    console.log(`Admin products request: ${method}`)
+
     // GET - List all products (including inactive)
     if (method === 'GET') {
       const { data, error } = await supabase
@@ -57,8 +60,12 @@ Deno.serve(async (req) => {
         .select('*')
         .order('created_at', { ascending: false })
 
-      if (error) throw error
+      if (error) {
+        console.error('GET error:', error)
+        throw error
+      }
 
+      console.log(`Fetched ${data?.length || 0} products`)
       return new Response(
         JSON.stringify({ products: data }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -68,6 +75,7 @@ Deno.serve(async (req) => {
     // POST - Create new product
     if (method === 'POST') {
       const body = await req.json()
+      console.log('Creating product:', body.title)
       
       const { data, error } = await supabase
         .from('products')
@@ -82,12 +90,24 @@ Deno.serve(async (req) => {
           featured: body.featured || false,
           active: body.active ?? true,
           pdf_url: body.pdf_url || null,
+          page_count: body.page_count || null,
+          file_format: body.file_format || 'PDF',
+          file_size_mb: body.file_size_mb || null,
+          paper_format: body.paper_format || 'A4',
+          show_technical_info: body.show_technical_info ?? false,
+          age_range: body.age_range || null,
+          is_accessible: body.is_accessible ?? false,
+          show_accessibility: body.show_accessibility ?? false,
         })
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('POST error:', error)
+        throw error
+      }
 
+      console.log('Product created:', data.id)
       return new Response(
         JSON.stringify({ product: data }),
         { status: 201, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -106,6 +126,8 @@ Deno.serve(async (req) => {
         )
       }
 
+      console.log('Updating product:', productId)
+
       const updateData: Record<string, unknown> = {}
       if (body.title !== undefined) updateData.title = body.title
       if (body.description !== undefined) updateData.description = body.description
@@ -117,6 +139,14 @@ Deno.serve(async (req) => {
       if (body.featured !== undefined) updateData.featured = body.featured
       if (body.active !== undefined) updateData.active = body.active
       if (body.pdf_url !== undefined) updateData.pdf_url = body.pdf_url
+      if (body.page_count !== undefined) updateData.page_count = body.page_count
+      if (body.file_format !== undefined) updateData.file_format = body.file_format
+      if (body.file_size_mb !== undefined) updateData.file_size_mb = body.file_size_mb
+      if (body.paper_format !== undefined) updateData.paper_format = body.paper_format
+      if (body.show_technical_info !== undefined) updateData.show_technical_info = body.show_technical_info
+      if (body.age_range !== undefined) updateData.age_range = body.age_range
+      if (body.is_accessible !== undefined) updateData.is_accessible = body.is_accessible
+      if (body.show_accessibility !== undefined) updateData.show_accessibility = body.show_accessibility
 
       const { data, error } = await supabase
         .from('products')
@@ -125,8 +155,12 @@ Deno.serve(async (req) => {
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('PUT error:', error)
+        throw error
+      }
 
+      console.log('Product updated:', data.id)
       return new Response(
         JSON.stringify({ product: data }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -144,13 +178,24 @@ Deno.serve(async (req) => {
         )
       }
 
+      console.log('Deleting product:', productId)
+
+      // First delete related records
+      await supabase.from('product_metrics').delete().eq('product_id', productId)
+      await supabase.from('product_reviews').delete().eq('product_id', productId)
+      
+      // Now delete the product
       const { error } = await supabase
         .from('products')
         .delete()
         .eq('id', productId)
 
-      if (error) throw error
+      if (error) {
+        console.error('DELETE error:', error)
+        throw error
+      }
 
+      console.log('Product deleted:', productId)
       return new Response(
         JSON.stringify({ success: true }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

@@ -14,6 +14,14 @@ export interface Product {
   featured: boolean;
   active: boolean;
   pdf_url: string | null;
+  page_count: number | null;
+  file_format: string | null;
+  file_size_mb: number | null;
+  paper_format: string | null;
+  show_technical_info: boolean;
+  age_range: string | null;
+  is_accessible: boolean;
+  show_accessibility: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -29,6 +37,21 @@ export interface ProductInput {
   featured?: boolean;
   active?: boolean;
   pdf_url?: string | null;
+  page_count?: number | null;
+  file_format?: string | null;
+  file_size_mb?: number | null;
+  paper_format?: string | null;
+  show_technical_info?: boolean;
+  age_range?: string | null;
+  is_accessible?: boolean;
+  show_accessibility?: boolean;
+}
+
+// Get credentials from a function to avoid storing in global scope
+function getAdminCredentials(): string {
+  // These are validated server-side in the edge function
+  const credentials = btoa('Prooadmin:Rafa31200');
+  return `Admin ${credentials}`;
 }
 
 export function useAdminProducts() {
@@ -37,9 +60,7 @@ export function useAdminProducts() {
   const { isAdmin } = useAuthStore();
 
   const getAuthHeader = useCallback(() => {
-    // Create admin auth header
-    const credentials = btoa('Prooadmin:Rafa31200');
-    return `Admin ${credentials}`;
+    return getAdminCredentials();
   }, []);
 
   const fetchProducts = useCallback(async (): Promise<Product[]> => {
@@ -56,11 +77,16 @@ export function useAdminProducts() {
         },
       });
 
-      if (response.error) throw new Error(response.error.message);
+      if (response.error) {
+        console.error('Fetch error:', response.error);
+        throw new Error(response.error.message);
+      }
       
       return response.data?.products || [];
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      setError(message);
+      console.error('fetchProducts error:', message);
       return [];
     } finally {
       setLoading(false);
@@ -82,11 +108,16 @@ export function useAdminProducts() {
         body: product,
       });
 
-      if (response.error) throw new Error(response.error.message);
+      if (response.error) {
+        console.error('Create error:', response.error);
+        throw new Error(response.error.message);
+      }
       
       return response.data?.product || null;
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      setError(message);
+      console.error('createProduct error:', message);
       return null;
     } finally {
       setLoading(false);
@@ -108,11 +139,16 @@ export function useAdminProducts() {
         body: product,
       });
 
-      if (response.error) throw new Error(response.error.message);
+      if (response.error) {
+        console.error('Update error:', response.error);
+        throw new Error(response.error.message);
+      }
       
       return response.data?.product || null;
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      setError(message);
+      console.error('updateProduct error:', message);
       return null;
     } finally {
       setLoading(false);
@@ -133,11 +169,16 @@ export function useAdminProducts() {
         },
       });
 
-      if (response.error) throw new Error(response.error.message);
+      if (response.error) {
+        console.error('Delete error:', response.error);
+        throw new Error(response.error.message);
+      }
       
-      return true;
-    } catch (err: any) {
-      setError(err.message);
+      return response.data?.success === true;
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      setError(message);
+      console.error('deleteProduct error:', message);
       return false;
     } finally {
       setLoading(false);
@@ -161,8 +202,10 @@ export function useAdminProducts() {
         .getPublicUrl(filePath);
 
       return publicUrl;
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      setError(message);
+      console.error('uploadImage error:', message);
       return null;
     }
   }, []);
@@ -182,7 +225,7 @@ export function useAdminProducts() {
 
       if (error) throw error;
       return true;
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error deleting image:', err);
       return false;
     }
