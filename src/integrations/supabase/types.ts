@@ -125,10 +125,12 @@ export type Database = {
           file_size_mb: number | null
           id: string
           images: string[] | null
+          is_accessible: boolean | null
           page_count: number | null
           paper_format: string | null
           pdf_url: string | null
           price: number
+          show_accessibility: boolean | null
           show_stock: boolean | null
           show_technical_info: boolean | null
           stock: number | null
@@ -146,10 +148,12 @@ export type Database = {
           file_size_mb?: number | null
           id?: string
           images?: string[] | null
+          is_accessible?: boolean | null
           page_count?: number | null
           paper_format?: string | null
           pdf_url?: string | null
           price?: number
+          show_accessibility?: boolean | null
           show_stock?: boolean | null
           show_technical_info?: boolean | null
           stock?: number | null
@@ -167,10 +171,12 @@ export type Database = {
           file_size_mb?: number | null
           id?: string
           images?: string[] | null
+          is_accessible?: boolean | null
           page_count?: number | null
           paper_format?: string | null
           pdf_url?: string | null
           price?: number
+          show_accessibility?: boolean | null
           show_stock?: boolean | null
           show_technical_info?: boolean | null
           stock?: number | null

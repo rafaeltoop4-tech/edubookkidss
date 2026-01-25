@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronLeft, ChevronRight, ArrowLeft, ShoppingCart, MessageCircle,
-  Star, FileText, Download, Layers, Check, CreditCard, Share2
+  Star, FileText, Download, Layers, Check, CreditCard, Share2, Accessibility
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -35,6 +35,8 @@ interface Product {
   paper_format: string | null;
   show_technical_info: boolean;
   age_range: string | null;
+  is_accessible: boolean;
+  show_accessibility: boolean;
 }
 
 interface Review {
@@ -442,6 +444,25 @@ export default function ProductDetail() {
                           <span>Folha {product.paper_format}</span>
                         </div>
                       )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Accessibility Badge */}
+              {product.is_accessible && product.show_accessibility && (
+                <Card className="border-blue-200 bg-blue-50/50">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-blue-100 rounded-full">
+                        <Accessibility className="h-6 w-6 text-blue-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-blue-800">Produto Acessível</h3>
+                        <p className="text-sm text-blue-600">
+                          Material adaptado para acessibilidade educacional e cognitiva
+                        </p>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
