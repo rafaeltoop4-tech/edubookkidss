@@ -2,6 +2,10 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore } from '@/store/authStore';
 
+// URL base para as edge functions
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
 export interface Product {
   id: string;
   title: string;
@@ -54,14 +58,27 @@ function getAdminCredentials(): string {
   return `Admin ${credentials}`;
 }
 
+// Helper para fazer requisições para edge functions
+async function edgeFetch(path: string, options: RequestInit = {}): Promise<Response> {
+  const url = `${SUPABASE_URL}/functions/v1/${path}`;
+  
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    'Authorization': getAdminCredentials(),
+    'apikey': SUPABASE_ANON_KEY,
+    ...options.headers,
+  };
+
+  return fetch(url, {
+    ...options,
+    headers,
+  });
+}
+
 export function useAdminProducts() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { isAdmin } = useAuthStore();
-
-  const getAuthHeader = useCallback(() => {
-    return getAdminCredentials();
-  }, []);
 
   const fetchProducts = useCallback(async (): Promise<Product[]> => {
     if (!isAdmin) return [];
@@ -70,19 +87,17 @@ export function useAdminProducts() {
     setError(null);
     
     try {
-      const response = await supabase.functions.invoke('admin-products', {
+      const response = await edgeFetch('admin-products', {
         method: 'GET',
-        headers: {
-          'Authorization': getAuthHeader(),
-        },
       });
 
-      if (response.error) {
-        console.error('Fetch error:', response.error);
-        throw new Error(response.error.message);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch products');
       }
       
-      return response.data?.products || [];
+      const data = await response.json();
+      return data?.products || [];
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       setError(message);
@@ -91,7 +106,7 @@ export function useAdminProducts() {
     } finally {
       setLoading(false);
     }
-  }, [isAdmin, getAuthHeader]);
+  }, [isAdmin]);
 
   const createProduct = useCallback(async (product: ProductInput): Promise<Product | null> => {
     if (!isAdmin) return null;
@@ -100,20 +115,18 @@ export function useAdminProducts() {
     setError(null);
     
     try {
-      const response = await supabase.functions.invoke('admin-products', {
+      const response = await edgeFetch('admin-products', {
         method: 'POST',
-        headers: {
-          'Authorization': getAuthHeader(),
-        },
-        body: product,
+        body: JSON.stringify(product),
       });
 
-      if (response.error) {
-        console.error('Create error:', response.error);
-        throw new Error(response.error.message);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create product');
       }
       
-      return response.data?.product || null;
+      const data = await response.json();
+      return data?.product || null;
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       setError(message);
@@ -122,7 +135,7 @@ export function useAdminProducts() {
     } finally {
       setLoading(false);
     }
-  }, [isAdmin, getAuthHeader]);
+  }, [isAdmin]);
 
   const updateProduct = useCallback(async (id: string, product: Partial<ProductInput>): Promise<Product | null> => {
     if (!isAdmin) return null;
@@ -131,20 +144,18 @@ export function useAdminProducts() {
     setError(null);
     
     try {
-      const response = await supabase.functions.invoke(`admin-products?id=${id}`, {
+      const response = await edgeFetch(`admin-products?id=${id}`, {
         method: 'PUT',
-        headers: {
-          'Authorization': getAuthHeader(),
-        },
-        body: product,
+        body: JSON.stringify(product),
       });
 
-      if (response.error) {
-        console.error('Update error:', response.error);
-        throw new Error(response.error.message);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update product');
       }
       
-      return response.data?.product || null;
+      const data = await response.json();
+      return data?.product || null;
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       setError(message);
@@ -153,7 +164,7 @@ export function useAdminProducts() {
     } finally {
       setLoading(false);
     }
-  }, [isAdmin, getAuthHeader]);
+  }, [isAdmin]);
 
   const deleteProduct = useCallback(async (id: string): Promise<boolean> => {
     if (!isAdmin) return false;
@@ -162,19 +173,17 @@ export function useAdminProducts() {
     setError(null);
     
     try {
-      const response = await supabase.functions.invoke(`admin-products?id=${id}`, {
+      const response = await edgeFetch(`admin-products?id=${id}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': getAuthHeader(),
-        },
       });
 
-      if (response.error) {
-        console.error('Delete error:', response.error);
-        throw new Error(response.error.message);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete product');
       }
       
-      return response.data?.success === true;
+      const data = await response.json();
+      return data?.success === true;
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       setError(message);
@@ -183,7 +192,7 @@ export function useAdminProducts() {
     } finally {
       setLoading(false);
     }
-  }, [isAdmin, getAuthHeader]);
+  }, [isAdmin]);
 
   const uploadImage = useCallback(async (file: File): Promise<string | null> => {
     try {
