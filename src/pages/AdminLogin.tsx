@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Lock, User, ArrowLeft, BookOpen } from 'lucide-react';
@@ -10,14 +10,34 @@ import { toast } from 'sonner';
 
 export default function AdminLogin() {
   const navigate = useNavigate();
-  const { login, isAdmin } = useAuthStore();
+  const { login, isAdmin, isLoading: authLoading } = useAuthStore();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Redirecionar se já estiver logado
+  // Redirecionar se já estiver logado (usando useEffect para evitar erro de renderização)
+  useEffect(() => {
+    if (isAdmin && !authLoading) {
+      navigate('/admin/dashboard');
+    }
+  }, [isAdmin, authLoading, navigate]);
+
+  // Mostrar loading enquanto verifica autenticação
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--gradient-hero)' }}>
+        <div className="flex flex-col items-center gap-4">
+          <div className="p-3 bg-primary rounded-xl">
+            <BookOpen className="h-8 w-8 text-primary-foreground animate-pulse" />
+          </div>
+          <p className="text-muted-foreground">Verificando sessão...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Se já está logado, não renderizar o form (vai redirecionar via useEffect)
   if (isAdmin) {
-    navigate('/admin/dashboard');
     return null;
   }
 

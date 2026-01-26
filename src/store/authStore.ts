@@ -1,10 +1,10 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-// Credenciais fixas do admin
+// Credenciais fixas do admin (sincronizadas com edge function)
 const ADMIN_CREDENTIALS = {
   username: 'Prooadmin',
-  password: 'Rafa31200'
+  password: 'ACESSORESTRITO'
 };
 
 interface AuthStore {
