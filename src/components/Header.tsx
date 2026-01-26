@@ -35,10 +35,10 @@ export function Header() {
   return (
     <motion.header 
       style={{ scale: headerScale, opacity: headerOpacity }}
-      className={`sticky top-0 z-50 w-full transition-all duration-300 ${
+      className={`sticky top-0 z-50 w-full transition-all duration-500 rounded-b-2xl ${
         isScrolled 
-          ? 'bg-primary/95 backdrop-blur-md shadow-lg' 
-          : 'bg-primary shadow-soft'
+          ? 'bg-primary/90 backdrop-blur-xl shadow-xl' 
+          : 'bg-primary/95 backdrop-blur-md shadow-soft'
       }`}
     >
       <div className="container mx-auto px-4">

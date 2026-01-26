@@ -50,7 +50,7 @@ export interface ProductInput {
 // Get credentials from a function to avoid storing in global scope
 function getAdminCredentials(): string {
   // These are validated server-side in the edge function
-  const credentials = btoa('Prooadmin:Rafa31200');
+  const credentials = btoa('Prooadmin:ACESSORESTRITO');
   return `Admin ${credentials}`;
 }
 
