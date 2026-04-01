@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore } from '@/store/authStore';
+import { getAdminAuthorizationHeader } from '@/lib/adminAuth';
 
 // URL base para as edge functions
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -51,20 +52,13 @@ export interface ProductInput {
   show_accessibility?: boolean;
 }
 
-// Get credentials from a function to avoid storing in global scope
-function getAdminCredentials(): string {
-  // These are validated server-side in the edge function
-  const credentials = btoa('Prooadmin:ACESSORESTRITO');
-  return `Admin ${credentials}`;
-}
-
 // Helper para fazer requisições para edge functions
 async function edgeFetch(path: string, options: RequestInit = {}): Promise<Response> {
   const url = `${SUPABASE_URL}/functions/v1/${path}`;
   
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
-    'Authorization': getAdminCredentials(),
+    'Authorization': getAdminAuthorizationHeader(),
     'apikey': SUPABASE_ANON_KEY,
     ...options.headers,
   };
@@ -92,7 +86,7 @@ export function useAdminProducts() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => null);
         throw new Error(errorData.error || 'Failed to fetch products');
       }
       
@@ -121,7 +115,7 @@ export function useAdminProducts() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => null);
         throw new Error(errorData.error || 'Failed to create product');
       }
       
@@ -150,7 +144,7 @@ export function useAdminProducts() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => null);
         throw new Error(errorData.error || 'Failed to update product');
       }
       
@@ -178,7 +172,7 @@ export function useAdminProducts() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => null);
         throw new Error(errorData.error || 'Failed to delete product');
       }
       
