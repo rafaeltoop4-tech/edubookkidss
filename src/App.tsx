@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/AdminLogin";
@@ -39,26 +39,26 @@ const App = () => (
           
           {/* Admin Protected Routes */}
           <Route
-            path="/admin"
             element={
               <ProtectedRoute>
                 <AdminLayout />
               </ProtectedRoute>
             }
           >
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="products" element={<Products />} />
-            <Route path="whatsapp" element={<WhatsAppSettings />} />
-            <Route path="layout" element={<LayoutSettings />} />
-            <Route path="header" element={<HeaderSettings />} />
-            <Route path="footer" element={<FooterSettings />} />
-            <Route path="testimonials" element={<Testimonials />} />
-            <Route path="faq" element={<FAQAdmin />} />
-            <Route path="settings" element={<GeneralSettings />} />
-            <Route path="metrics" element={<Metrics />} />
-            <Route path="sales" element={<Sales />} />
-            <Route path="reviews" element={<Reviews />} />
+            <Route path="/admin/dashboard" element={<Dashboard />} />
+            <Route path="/admin/products" element={<Products />} />
+            <Route path="/admin/whatsapp" element={<WhatsAppSettings />} />
+            <Route path="/admin/layout" element={<LayoutSettings />} />
+            <Route path="/admin/header" element={<HeaderSettings />} />
+            <Route path="/admin/footer" element={<FooterSettings />} />
+            <Route path="/admin/testimonials" element={<Testimonials />} />
+            <Route path="/admin/faq" element={<FAQAdmin />} />
+            <Route path="/admin/settings" element={<GeneralSettings />} />
+            <Route path="/admin/metrics" element={<Metrics />} />
+            <Route path="/admin/sales" element={<Sales />} />
+            <Route path="/admin/reviews" element={<Reviews />} />
           </Route>
+          <Route path="/admin/*" element={<Navigate to="/admin" replace />} />
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

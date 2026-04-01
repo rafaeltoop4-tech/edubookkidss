@@ -6,8 +6,8 @@ const corsHeaders = {
 }
 
 // Admin credentials validation via environment variables (server-side only)
-const ADMIN_USERNAME = Deno.env.get('ADMIN_USERNAME') || 'Prooadmin'
-const ADMIN_PASSWORD = Deno.env.get('ADMIN_PASSWORD') || 'ACESSORESTRITO'
+const ADMIN_USERNAME = Deno.env.get('ADMIN_USERNAME') || 'Edubookkids31200'
+const ADMIN_PASSWORD = Deno.env.get('ADMIN_PASSWORD') || 'edu31200'
 
 function validateAdmin(authHeader: string | null): boolean {
   if (!authHeader) return false
@@ -181,8 +181,17 @@ Deno.serve(async (req) => {
       console.log('Deleting product:', productId)
 
       // First delete related records
-      await supabase.from('product_metrics').delete().eq('product_id', productId)
-      await supabase.from('product_reviews').delete().eq('product_id', productId)
+      const { error: metricsDeleteError } = await supabase.from('product_metrics').delete().eq('product_id', productId)
+      if (metricsDeleteError) {
+        console.error('DELETE product_metrics error:', metricsDeleteError)
+        throw metricsDeleteError
+      }
+
+      const { error: reviewsDeleteError } = await supabase.from('product_reviews').delete().eq('product_id', productId)
+      if (reviewsDeleteError) {
+        console.error('DELETE product_reviews error:', reviewsDeleteError)
+        throw reviewsDeleteError
+      }
       
       // Now delete the product
       const { error } = await supabase
