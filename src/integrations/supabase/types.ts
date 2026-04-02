@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      cart_events: {
+        Row: {
+          created_at: string | null
+          event_type: string
+          id: string
+          product_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          event_type: string
+          id?: string
+          product_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          event_type?: string
+          id?: string
+          product_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       faq: {
         Row: {
           active: boolean | null
@@ -38,6 +62,33 @@ export type Database = {
           id?: string
           order_index?: number | null
           question?: string
+        }
+        Relationships: []
+      }
+      orders: {
+        Row: {
+          created_at: string | null
+          id: string
+          status: string
+          total_price: number
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          status?: string
+          total_price?: number
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          status?: string
+          total_price?: number
+          updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -182,6 +233,30 @@ export type Database = {
           stock?: number | null
           tags?: string[] | null
           title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string
+          full_name: string
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          full_name: string
+          id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          full_name?: string
+          id?: string
           updated_at?: string | null
         }
         Relationships: []
