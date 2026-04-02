@@ -6,78 +6,76 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
 }
 
-// Admin credentials validation via environment variables (server-side only)
-const ADMIN_USERNAME = Deno.env.get('ADMIN_USERNAME') || 'Edubookkids31200'
-const ADMIN_PASSWORD = Deno.env.get('ADMIN_PASSWORD') || 'edu31200'
-
-function validateAdmin(authHeader: string | null): boolean {
+async function validateAdminJWT(authHeader: string | null, supabaseUrl: string, supabaseAnonKey: string): Promise<boolean> {
   if (!authHeader) return false
   
   try {
-    // Expected format: "Admin base64(username:password)"
-    const [type, credentials] = authHeader.split(' ')
-    if (type !== 'Admin') return false
+    const token = authHeader.replace('Bearer ', '')
+    // Create a client with the user's token to check their identity
+    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: `Bearer ${token}` } }
+    })
     
-    const decoded = atob(credentials)
-    const [username, password] = decoded.split(':')
+    const { data: { user }, error } = await userClient.auth.getUser()
+    if (error || !user) return false
     
-    return username === ADMIN_USERNAME && password === ADMIN_PASSWORD
+    // Check admin role using service role client
+    const serviceClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
+    const { data: roleData } = await serviceClient
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('role', 'admin')
+      .maybeSingle()
+    
+    return !!roleData
   } catch {
     return false
   }
 }
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    // Validate admin authentication
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+
+    // Validate admin via JWT
     const authHeader = req.headers.get('authorization')
-    if (!validateAdmin(authHeader)) {
-      console.log('Unauthorized access attempt')
+    const isAdmin = await validateAdminJWT(authHeader, supabaseUrl, supabaseAnonKey)
+    
+    if (!isAdmin) {
       return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
+        JSON.stringify({ error: 'Unauthorized - Admin access required' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Create Supabase client with service role (bypasses RLS)
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
-
     const url = new URL(req.url)
     const method = req.method
 
-    console.log(`Admin products request: ${method}`)
-
-    // GET - List all products (including inactive)
+    // GET - List all products
     if (method === 'GET') {
       const { data, error } = await supabase
         .from('products')
         .select('*')
         .order('created_at', { ascending: false })
 
-      if (error) {
-        console.error('GET error:', error)
-        throw error
-      }
-
-      console.log(`Fetched ${data?.length || 0} products`)
+      if (error) throw error
       return new Response(
         JSON.stringify({ products: data }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // POST - Create new product
+    // POST - Create product
     if (method === 'POST') {
       const body = await req.json()
-      console.log('Creating product:', body.title)
-      
       const { data, error } = await supabase
         .from('products')
         .insert({
@@ -103,12 +101,7 @@ Deno.serve(async (req) => {
         .select()
         .single()
 
-      if (error) {
-        console.error('POST error:', error)
-        throw error
-      }
-
-      console.log('Product created:', data.id)
+      if (error) throw error
       return new Response(
         JSON.stringify({ product: data }),
         { status: 201, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -119,7 +112,6 @@ Deno.serve(async (req) => {
     if (method === 'PUT') {
       const body = await req.json()
       const productId = url.searchParams.get('id')
-
       if (!productId) {
         return new Response(
           JSON.stringify({ error: 'Product ID required' }),
@@ -127,27 +119,11 @@ Deno.serve(async (req) => {
         )
       }
 
-      console.log('Updating product:', productId)
-
       const updateData: Record<string, unknown> = {}
-      if (body.title !== undefined) updateData.title = body.title
-      if (body.description !== undefined) updateData.description = body.description
-      if (body.price !== undefined) updateData.price = body.price
-      if (body.stock !== undefined) updateData.stock = body.stock
-      if (body.show_stock !== undefined) updateData.show_stock = body.show_stock
-      if (body.images !== undefined) updateData.images = body.images
-      if (body.tags !== undefined) updateData.tags = body.tags
-      if (body.featured !== undefined) updateData.featured = body.featured
-      if (body.active !== undefined) updateData.active = body.active
-      if (body.pdf_url !== undefined) updateData.pdf_url = body.pdf_url
-      if (body.page_count !== undefined) updateData.page_count = body.page_count
-      if (body.file_format !== undefined) updateData.file_format = body.file_format
-      if (body.file_size_mb !== undefined) updateData.file_size_mb = body.file_size_mb
-      if (body.paper_format !== undefined) updateData.paper_format = body.paper_format
-      if (body.show_technical_info !== undefined) updateData.show_technical_info = body.show_technical_info
-      if (body.age_range !== undefined) updateData.age_range = body.age_range
-      if (body.is_accessible !== undefined) updateData.is_accessible = body.is_accessible
-      if (body.show_accessibility !== undefined) updateData.show_accessibility = body.show_accessibility
+      const fields = ['title','description','price','stock','show_stock','images','tags','featured','active','pdf_url','page_count','file_format','file_size_mb','paper_format','show_technical_info','age_range','is_accessible','show_accessibility']
+      for (const field of fields) {
+        if (body[field] !== undefined) updateData[field] = body[field]
+      }
 
       const { data, error } = await supabase
         .from('products')
@@ -156,12 +132,7 @@ Deno.serve(async (req) => {
         .select()
         .single()
 
-      if (error) {
-        console.error('PUT error:', error)
-        throw error
-      }
-
-      console.log('Product updated:', data.id)
+      if (error) throw error
       return new Response(
         JSON.stringify({ product: data }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -171,7 +142,6 @@ Deno.serve(async (req) => {
     // DELETE - Delete product
     if (method === 'DELETE') {
       const productId = url.searchParams.get('id')
-
       if (!productId) {
         return new Response(
           JSON.stringify({ error: 'Product ID required' }),
@@ -179,33 +149,13 @@ Deno.serve(async (req) => {
         )
       }
 
-      console.log('Deleting product:', productId)
-
-      // First delete related records
-      const { error: metricsDeleteError } = await supabase.from('product_metrics').delete().eq('product_id', productId)
-      if (metricsDeleteError) {
-        console.error('DELETE product_metrics error:', metricsDeleteError)
-        throw metricsDeleteError
-      }
-
-      const { error: reviewsDeleteError } = await supabase.from('product_reviews').delete().eq('product_id', productId)
-      if (reviewsDeleteError) {
-        console.error('DELETE product_reviews error:', reviewsDeleteError)
-        throw reviewsDeleteError
-      }
+      // Delete related records first
+      await supabase.from('product_metrics').delete().eq('product_id', productId)
+      await supabase.from('product_reviews').delete().eq('product_id', productId)
       
-      // Now delete the product
-      const { error } = await supabase
-        .from('products')
-        .delete()
-        .eq('id', productId)
+      const { error } = await supabase.from('products').delete().eq('id', productId)
+      if (error) throw error
 
-      if (error) {
-        console.error('DELETE error:', error)
-        throw error
-      }
-
-      console.log('Product deleted:', productId)
       return new Response(
         JSON.stringify({ success: true }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
