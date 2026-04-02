@@ -46,8 +46,8 @@ export function AdminSidebar() {
   const { logout } = useAuthStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     toast.success('Logout realizado com sucesso!');
     navigate('/admin');
   };
