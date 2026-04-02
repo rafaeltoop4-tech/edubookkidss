@@ -1,11 +1,8 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore } from '@/store/authStore';
-import { getAdminAuthorizationHeader } from '@/lib/adminAuth';
 
-// URL base para as edge functions
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 export interface Product {
   id: string;
@@ -52,21 +49,19 @@ export interface ProductInput {
   show_accessibility?: boolean;
 }
 
-// Helper para fazer requisições para edge functions
+async function getAuthHeaders(): Promise<HeadersInit> {
+  const { data: { session } } = await supabase.auth.getSession();
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${session?.access_token || ''}`,
+    'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+  };
+}
+
 async function edgeFetch(path: string, options: RequestInit = {}): Promise<Response> {
   const url = `${SUPABASE_URL}/functions/v1/${path}`;
-  
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    'Authorization': getAdminAuthorizationHeader(),
-    'apikey': SUPABASE_ANON_KEY,
-    ...options.headers,
-  };
-
-  return fetch(url, {
-    ...options,
-    headers,
-  });
+  const headers = await getAuthHeaders();
+  return fetch(url, { ...options, headers: { ...headers, ...options.headers } });
 }
 
 export function useAdminProducts() {
@@ -76,26 +71,19 @@ export function useAdminProducts() {
 
   const fetchProducts = useCallback(async (): Promise<Product[]> => {
     if (!isAdmin) return [];
-    
     setLoading(true);
     setError(null);
-    
     try {
-      const response = await edgeFetch('admin-products', {
-        method: 'GET',
-      });
-
+      const response = await edgeFetch('admin-products', { method: 'GET' });
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
-        throw new Error(errorData.error || 'Failed to fetch products');
+        throw new Error(errorData?.error || 'Failed to fetch products');
       }
-      
       const data = await response.json();
       return data?.products || [];
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       setError(message);
-      console.error('fetchProducts error:', message);
       return [];
     } finally {
       setLoading(false);
@@ -104,27 +92,19 @@ export function useAdminProducts() {
 
   const createProduct = useCallback(async (product: ProductInput): Promise<Product | null> => {
     if (!isAdmin) return null;
-    
     setLoading(true);
     setError(null);
-    
     try {
-      const response = await edgeFetch('admin-products', {
-        method: 'POST',
-        body: JSON.stringify(product),
-      });
-
+      const response = await edgeFetch('admin-products', { method: 'POST', body: JSON.stringify(product) });
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
-        throw new Error(errorData.error || 'Failed to create product');
+        throw new Error(errorData?.error || 'Failed to create product');
       }
-      
       const data = await response.json();
       return data?.product || null;
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       setError(message);
-      console.error('createProduct error:', message);
       return null;
     } finally {
       setLoading(false);
@@ -133,27 +113,19 @@ export function useAdminProducts() {
 
   const updateProduct = useCallback(async (id: string, product: Partial<ProductInput>): Promise<Product | null> => {
     if (!isAdmin) return null;
-    
     setLoading(true);
     setError(null);
-    
     try {
-      const response = await edgeFetch(`admin-products?id=${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(product),
-      });
-
+      const response = await edgeFetch(`admin-products?id=${id}`, { method: 'PUT', body: JSON.stringify(product) });
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
-        throw new Error(errorData.error || 'Failed to update product');
+        throw new Error(errorData?.error || 'Failed to update product');
       }
-      
       const data = await response.json();
       return data?.product || null;
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       setError(message);
-      console.error('updateProduct error:', message);
       return null;
     } finally {
       setLoading(false);
@@ -162,26 +134,19 @@ export function useAdminProducts() {
 
   const deleteProduct = useCallback(async (id: string): Promise<boolean> => {
     if (!isAdmin) return false;
-    
     setLoading(true);
     setError(null);
-    
     try {
-      const response = await edgeFetch(`admin-products?id=${id}`, {
-        method: 'DELETE',
-      });
-
+      const response = await edgeFetch(`admin-products?id=${id}`, { method: 'DELETE' });
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
-        throw new Error(errorData.error || 'Failed to delete product');
+        throw new Error(errorData?.error || 'Failed to delete product');
       }
-      
       const data = await response.json();
       return data?.success === true;
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       setError(message);
-      console.error('deleteProduct error:', message);
       return false;
     } finally {
       setLoading(false);
@@ -193,39 +158,24 @@ export function useAdminProducts() {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
       const filePath = `products/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('product-images')
-        .upload(filePath, file);
-
+      const { error: uploadError } = await supabase.storage.from('product-images').upload(filePath, file);
       if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('product-images')
-        .getPublicUrl(filePath);
-
+      const { data: { publicUrl } } = supabase.storage.from('product-images').getPublicUrl(filePath);
       return publicUrl;
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       setError(message);
-      console.error('uploadImage error:', message);
       return null;
     }
   }, []);
 
   const deleteImage = useCallback(async (imageUrl: string): Promise<boolean> => {
     try {
-      // Extract file path from URL
       const url = new URL(imageUrl);
       const pathParts = url.pathname.split('/product-images/');
-      if (pathParts.length < 2) return true; // Not a storage URL
-
+      if (pathParts.length < 2) return true;
       const filePath = pathParts[1];
-
-      const { error } = await supabase.storage
-        .from('product-images')
-        .remove([filePath]);
-
+      const { error } = await supabase.storage.from('product-images').remove([filePath]);
       if (error) throw error;
       return true;
     } catch (err: unknown) {
@@ -234,14 +184,5 @@ export function useAdminProducts() {
     }
   }, []);
 
-  return {
-    loading,
-    error,
-    fetchProducts,
-    createProduct,
-    updateProduct,
-    deleteProduct,
-    uploadImage,
-    deleteImage,
-  };
+  return { loading, error, fetchProducts, createProduct, updateProduct, deleteProduct, uploadImage, deleteImage };
 }
