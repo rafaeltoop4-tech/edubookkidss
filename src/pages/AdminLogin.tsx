@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Lock, User, ArrowLeft, BookOpen } from 'lucide-react';
+import { Lock, Mail, ArrowLeft, BookOpen, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,18 +11,17 @@ import { toast } from 'sonner';
 export default function AdminLogin() {
   const navigate = useNavigate();
   const { login, isAdmin, isLoading: authLoading } = useAuthStore();
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-  // Redirecionar se já estiver logado (usando useEffect para evitar erro de renderização)
   useEffect(() => {
     if (isAdmin && !authLoading) {
       navigate('/admin/dashboard');
     }
   }, [isAdmin, authLoading, navigate]);
 
-  // Mostrar loading enquanto verifica autenticação
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--gradient-hero)' }}>
@@ -36,25 +35,22 @@ export default function AdminLogin() {
     );
   }
 
-  // Se já está logado, não renderizar o form (vai redirecionar via useEffect)
-  if (isAdmin) {
-    return null;
-  }
+  if (isAdmin) return null;
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email.trim() || !password.trim()) {
+      toast.error('Preencha email e senha');
+      return;
+    }
     setIsLoading(true);
 
-    // Simular delay para feedback visual
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    const success = login(username, password);
-
-    if (success) {
+    const result = await login(email, password);
+    if (result.success) {
       toast.success('Login realizado com sucesso! 🎉');
-      navigate('/admin/dashboard');
+      // The onAuthStateChange will set isAdmin and trigger redirect
     } else {
-      toast.error('Usuário ou senha incorretos');
+      toast.error(result.error || 'Email ou senha incorretos');
     }
 
     setIsLoading(false);
@@ -80,34 +76,43 @@ export default function AdminLogin() {
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <Label htmlFor="username" className="flex items-center gap-2 mb-2">
-                <User className="h-4 w-4" /> Usuário
+              <Label htmlFor="email" className="flex items-center gap-2 mb-2">
+                <Mail className="h-4 w-4" /> Email
               </Label>
               <Input
-                id="username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Digite seu usuário"
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="admin@edubookkids.com"
                 className="rounded-xl"
                 required
-                autoComplete="username"
+                autoComplete="email"
               />
             </div>
             <div>
               <Label htmlFor="password" className="flex items-center gap-2 mb-2">
                 <Lock className="h-4 w-4" /> Senha
               </Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="rounded-xl"
-                required
-                autoComplete="current-password"
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="rounded-xl pr-10"
+                  required
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
             <Button
               type="submit"

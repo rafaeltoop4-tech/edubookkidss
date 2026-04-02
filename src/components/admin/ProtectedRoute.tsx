@@ -7,9 +7,8 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isAdmin, isLoading } = useAuthStore();
+  const { isAdmin, isLoading, isAuthenticated } = useAuthStore();
 
-  // Mostrar loading enquanto verifica autenticação
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted/30">
@@ -21,7 +20,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     );
   }
 
-  if (!isAdmin) {
+  if (!isAuthenticated || !isAdmin) {
     return <Navigate to="/admin" replace />;
   }
 
