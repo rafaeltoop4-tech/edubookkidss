@@ -44,7 +44,7 @@ export function CartDrawer() {
         const { data, error } = await supabase
           .from('site_settings')
           .select('value')
-          .eq('key', 'whatsapp_number')
+          .eq('key', 'whatsapp')
           .single();
         
         if (!error && data?.value) {
