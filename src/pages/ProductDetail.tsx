@@ -119,7 +119,7 @@ export default function ProductDetail() {
 
   const requireAuth = (action: () => void) => {
     if (!isAuthenticated) {
-      toast.error('Faça login para continuar', { description: 'Você precisa estar logado para comprar.' });
+      toast.error('Faça login para finalizar a compra', { description: 'Crie uma conta ou entre para continuar.' });
       navigate('/entrar');
       return;
     }
