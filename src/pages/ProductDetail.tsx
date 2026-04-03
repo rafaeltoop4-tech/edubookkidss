@@ -119,7 +119,7 @@ export default function ProductDetail() {
 
   const requireAuth = (action: () => void) => {
     if (!isAuthenticated) {
-      toast.error('Faça login para continuar', { description: 'Você precisa estar logado para comprar.' });
+      toast.error('Faça login para finalizar a compra', { description: 'Crie uma conta ou entre para continuar.' });
       navigate('/entrar');
       return;
     }
@@ -127,29 +127,27 @@ export default function ProductDetail() {
   };
 
   const handleAddToCart = () => {
-    requireAuth(() => {
-      if (!product) return;
-      addItem({
-        id: product.id,
-        title: product.title,
-        price: product.price,
-        image: product.images[0] || '/placeholder.svg',
-      });
-      trackCartAdd(product.id, 1);
-
-      // Track cart event in DB
-      const userId = useAuthStore.getState().user?.id;
-      if (userId) {
-        supabase.from('cart_events').insert({
-          user_id: userId,
-          product_id: product.id,
-          event_type: 'add',
-        }).then(() => {});
-      }
-
-      toast.success(`${product.title} adicionado ao carrinho! 🎉`);
-      openCart();
+    if (!product) return;
+    addItem({
+      id: product.id,
+      title: product.title,
+      price: product.price,
+      image: product.images[0] || '/placeholder.svg',
     });
+    trackCartAdd(product.id, 1);
+
+    // Track cart event in DB if logged in
+    const userId = useAuthStore.getState().user?.id;
+    if (userId) {
+      supabase.from('cart_events').insert({
+        user_id: userId,
+        product_id: product.id,
+        event_type: 'add',
+      }).then(() => {});
+    }
+
+    toast.success(`${product.title} adicionado ao carrinho! 🎉`);
+    openCart();
   };
 
   const generateSaleCode = () => {
@@ -160,7 +158,8 @@ export default function ProductDetail() {
 
   const handleWhatsAppClick = () => {
     requireAuth(async () => {
-      if (!product || !whatsappNumber) return;
+      if (!product) return;
+      const numberToUse = whatsappNumber || '5574999581805';
       const saleCode = generateSaleCode();
       
       try {
@@ -177,7 +176,7 @@ export default function ProductDetail() {
       const message = encodeURIComponent(
         `🛒 *Pedido Edu Book Kids*\n\n📦 Produto: ${product.title}\n💰 Valor: R$ ${product.price.toFixed(2)}\n🎫 Código: ${saleCode}\n\nOlá! Tenho interesse neste produto.`
       );
-      const cleanNumber = whatsappNumber.replace(/\D/g, '');
+      const cleanNumber = numberToUse.replace(/\D/g, '');
       const formattedNumber = cleanNumber.startsWith('55') ? cleanNumber : `55${cleanNumber}`;
       window.open(`https://wa.me/${formattedNumber}?text=${message}`, '_blank');
     });
@@ -243,7 +242,7 @@ export default function ProductDetail() {
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             {/* Image Gallery */}
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
-              <div className="relative aspect-square rounded-3xl overflow-hidden bg-white/10 backdrop-blur-sm shadow-2xl">
+              <div className="relative aspect-[3/4] md:aspect-square rounded-3xl overflow-hidden bg-white/10 backdrop-blur-sm shadow-2xl">
                 <AnimatePresence mode="wait">
                   <motion.img
                     key={currentImageIndex}
@@ -356,7 +355,7 @@ export default function ProductDetail() {
                 <Button
                   onClick={handleWhatsAppClick}
                   className="w-full h-16 text-lg font-bold bg-green-500 hover:bg-green-600 text-white rounded-2xl shadow-lg hover:shadow-xl transition-all hover:scale-[1.02]"
-                  disabled={!whatsappNumber}
+                  disabled={false}
                 >
                   <MessageCircle className="mr-2 h-6 w-6" />
                   Comprar Agora pelo WhatsApp
@@ -495,7 +494,7 @@ export default function ProductDetail() {
               <Button
                 onClick={handleWhatsAppClick}
                 className="flex-1 h-14 text-lg font-bold bg-green-500 hover:bg-green-600 text-white rounded-2xl shadow-lg"
-                disabled={!whatsappNumber}
+                disabled={false}
               >
                 <MessageCircle className="mr-2 h-5 w-5" />
                 Comprar pelo WhatsApp

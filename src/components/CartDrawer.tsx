@@ -31,7 +31,7 @@ export function CartDrawer() {
   const [customerPhone, setCustomerPhone] = useState('');
   const [showPreview, setShowPreview] = useState(false);
   const [errors, setErrors] = useState<{ name?: string; phone?: string }>({});
-  const [whatsappNumber, setWhatsappNumber] = useState('5574999581805');
+  const [whatsappNumber, setWhatsappNumber] = useState('');
 
   const { trackPurchase } = useProductMetrics();
 
@@ -44,11 +44,14 @@ export function CartDrawer() {
         const { data, error } = await supabase
           .from('site_settings')
           .select('value')
-          .eq('key', 'whatsapp_number')
+          .eq('key', 'whatsapp')
           .single();
         
         if (!error && data?.value) {
-          setWhatsappNumber(data.value as string);
+          const settings = data.value as { phone?: string };
+          const phone = settings.phone || '';
+          const clean = phone.replace(/\D/g, '');
+          setWhatsappNumber(clean.startsWith('55') ? clean : `55${clean}`);
         }
       } catch (error) {
         console.error('Error fetching WhatsApp number:', error);
@@ -114,6 +117,11 @@ export function CartDrawer() {
   };
 
   const handleSendWhatsApp = () => {
+    if (!whatsappNumber) {
+      toast.error('Número de WhatsApp não configurado');
+      return;
+    }
+
     // Track purchase events for all items
     items.forEach(item => {
       trackPurchase(item.id, item.quantity);

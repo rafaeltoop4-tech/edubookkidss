@@ -23,6 +23,7 @@ import GeneralSettings from "./pages/admin/Settings";
 import Metrics from "./pages/admin/Metrics";
 import Sales from "./pages/admin/Sales";
 import Reviews from "./pages/admin/Reviews";
+import Admins from "./pages/admin/Admins";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +60,7 @@ const App = () => (
             <Route path="/admin/metrics" element={<Metrics />} />
             <Route path="/admin/sales" element={<Sales />} />
             <Route path="/admin/reviews" element={<Reviews />} />
+            <Route path="/admin/admins" element={<Admins />} />
           </Route>
           <Route path="/admin/*" element={<Navigate to="/admin" replace />} />
 

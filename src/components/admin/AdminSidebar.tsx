@@ -1,23 +1,9 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
-  Package, 
-  MessageCircle, 
-  Palette, 
-  LayoutGrid,
-  Settings, 
-  Eye, 
-  LogOut,
-  BookOpen,
-  Home,
-  FileText,
-  Star,
-  HelpCircle,
-  BarChart3,
-  DollarSign,
-  MessageSquare,
-  Menu,
-  X
+  Package, MessageCircle, Palette, LayoutGrid, Settings, Eye, LogOut,
+  BookOpen, Home, FileText, Star, HelpCircle, BarChart3, DollarSign,
+  MessageSquare, Menu, X, Shield
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
@@ -36,6 +22,7 @@ const menuItems = [
   { icon: FileText, label: 'Rodapé', path: '/admin/footer' },
   { icon: Star, label: 'Depoimentos', path: '/admin/testimonials' },
   { icon: HelpCircle, label: 'FAQ', path: '/admin/faq' },
+  { icon: Shield, label: 'Administradores', path: '/admin/admins' },
   { icon: Settings, label: 'Configurações', path: '/admin/settings' },
   { icon: Eye, label: 'Ver Site', path: '/', external: true },
 ];

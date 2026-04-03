@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
-import { ShoppingCart, Menu, X, BookOpen, User, LogOut } from 'lucide-react';
+import { ShoppingCart, Menu, X, BookOpen, User, LogOut, Settings } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { getTotalItems, openCart } = useCartStore();
-  const { isAuthenticated, user, logout } = useAuthStore();
+  const { isAuthenticated, isAdmin, user, logout } = useAuthStore();
   const navigate = useNavigate();
   const totalItems = getTotalItems();
 
@@ -99,6 +99,15 @@ export function Header() {
             {/* Auth Button */}
             {isAuthenticated ? (
               <div className="hidden md:flex items-center gap-2">
+                {isAdmin && (
+                  <button
+                    onClick={() => navigate('/admin/dashboard')}
+                    className="p-2 bg-primary-foreground/20 rounded-xl text-primary-foreground hover:bg-primary-foreground/30 transition-colors"
+                    title="Painel Admin"
+                  >
+                    <Settings className="h-4 w-4" />
+                  </button>
+                )}
                 <span className="text-primary-foreground/80 text-sm truncate max-w-[120px]">
                   {user?.user_metadata?.full_name || user?.email?.split('@')[0]}
                 </span>
@@ -179,12 +188,23 @@ export function Header() {
                 </a>
               ))}
               {isAuthenticated ? (
-                <button
-                  onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}
-                  className="text-primary-foreground py-2 px-4 rounded-xl hover:bg-primary-foreground/10 transition-colors font-medium text-left flex items-center gap-2"
-                >
-                  <LogOut className="h-4 w-4" /> Sair
-                </button>
+                <>
+                  {isAdmin && (
+                    <Link
+                      to="/admin/dashboard"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="text-primary-foreground py-2 px-4 rounded-xl hover:bg-primary-foreground/10 transition-colors font-medium flex items-center gap-2"
+                    >
+                      <Settings className="h-4 w-4" /> Painel Admin
+                    </Link>
+                  )}
+                  <button
+                    onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}
+                    className="text-primary-foreground py-2 px-4 rounded-xl hover:bg-primary-foreground/10 transition-colors font-medium text-left flex items-center gap-2"
+                  >
+                    <LogOut className="h-4 w-4" /> Sair
+                  </button>
+                </>
               ) : (
                 <Link
                   to="/entrar"
