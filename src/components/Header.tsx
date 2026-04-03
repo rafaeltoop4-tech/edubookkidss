@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { getTotalItems, openCart } = useCartStore();
-  const { isAuthenticated, user, logout } = useAuthStore();
+  const { isAuthenticated, isAdmin, user, logout } = useAuthStore();
   const navigate = useNavigate();
   const totalItems = getTotalItems();
 
