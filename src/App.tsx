@@ -60,6 +60,7 @@ const App = () => (
             <Route path="/admin/metrics" element={<Metrics />} />
             <Route path="/admin/sales" element={<Sales />} />
             <Route path="/admin/reviews" element={<Reviews />} />
+            <Route path="/admin/admins" element={<Admins />} />
           </Route>
           <Route path="/admin/*" element={<Navigate to="/admin" replace />} />
 

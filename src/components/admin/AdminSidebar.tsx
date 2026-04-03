@@ -36,6 +36,7 @@ const menuItems = [
   { icon: FileText, label: 'Rodapé', path: '/admin/footer' },
   { icon: Star, label: 'Depoimentos', path: '/admin/testimonials' },
   { icon: HelpCircle, label: 'FAQ', path: '/admin/faq' },
+  { icon: Shield, label: 'Administradores', path: '/admin/admins' },
   { icon: Settings, label: 'Configurações', path: '/admin/settings' },
   { icon: Eye, label: 'Ver Site', path: '/', external: true },
 ];
