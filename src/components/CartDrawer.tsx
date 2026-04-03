@@ -48,7 +48,10 @@ export function CartDrawer() {
           .single();
         
         if (!error && data?.value) {
-          setWhatsappNumber(data.value as string);
+          const settings = data.value as { phone?: string };
+          const phone = settings.phone || '';
+          const clean = phone.replace(/\D/g, '');
+          setWhatsappNumber(clean.startsWith('55') ? clean : `55${clean}`);
         }
       } catch (error) {
         console.error('Error fetching WhatsApp number:', error);
