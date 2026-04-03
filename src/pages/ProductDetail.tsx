@@ -78,7 +78,7 @@ export default function ProductDetail() {
     try {
       const { data, error } = await supabase
         .from('products')
-        .select('*')
+        .select('id, title, description, price, images, tags, stock, show_stock, featured, active, age_range, page_count, file_format, file_size_mb, paper_format, show_technical_info, is_accessible, show_accessibility, created_at, updated_at')
         .eq('id', id)
         .eq('active', true)
         .single();
