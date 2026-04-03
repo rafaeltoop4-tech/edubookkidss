@@ -84,7 +84,7 @@ export default function AdminLogin() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@edubookkids.com"
+                placeholder="seu@email.com"
                 className="rounded-xl"
                 required
                 autoComplete="email"

@@ -188,12 +188,23 @@ export function Header() {
                 </a>
               ))}
               {isAuthenticated ? (
-                <button
-                  onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}
-                  className="text-primary-foreground py-2 px-4 rounded-xl hover:bg-primary-foreground/10 transition-colors font-medium text-left flex items-center gap-2"
-                >
-                  <LogOut className="h-4 w-4" /> Sair
-                </button>
+                <>
+                  {isAdmin && (
+                    <Link
+                      to="/admin/dashboard"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="text-primary-foreground py-2 px-4 rounded-xl hover:bg-primary-foreground/10 transition-colors font-medium flex items-center gap-2"
+                    >
+                      <Settings className="h-4 w-4" /> Painel Admin
+                    </Link>
+                  )}
+                  <button
+                    onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}
+                    className="text-primary-foreground py-2 px-4 rounded-xl hover:bg-primary-foreground/10 transition-colors font-medium text-left flex items-center gap-2"
+                  >
+                    <LogOut className="h-4 w-4" /> Sair
+                  </button>
+                </>
               ) : (
                 <Link
                   to="/entrar"

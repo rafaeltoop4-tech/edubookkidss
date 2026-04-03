@@ -178,7 +178,7 @@ export default function ProductDetail() {
       const message = encodeURIComponent(
         `🛒 *Pedido Edu Book Kids*\n\n📦 Produto: ${product.title}\n💰 Valor: R$ ${product.price.toFixed(2)}\n🎫 Código: ${saleCode}\n\nOlá! Tenho interesse neste produto.`
       );
-      const cleanNumber = whatsappNumber.replace(/\D/g, '');
+      const cleanNumber = numberToUse.replace(/\D/g, '');
       const formattedNumber = cleanNumber.startsWith('55') ? cleanNumber : `55${cleanNumber}`;
       window.open(`https://wa.me/${formattedNumber}?text=${message}`, '_blank');
     });

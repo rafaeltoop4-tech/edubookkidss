@@ -117,6 +117,11 @@ export function CartDrawer() {
   };
 
   const handleSendWhatsApp = () => {
+    if (!whatsappNumber) {
+      toast.error('Número de WhatsApp não configurado');
+      return;
+    }
+
     // Track purchase events for all items
     items.forEach(item => {
       trackPurchase(item.id, item.quantity);

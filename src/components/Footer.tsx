@@ -62,9 +62,6 @@ export function Footer() {
               <a href="/#depoimentos" className="text-foreground/80 hover:text-foreground transition-colors">
                 Depoimentos
               </a>
-              <Link to="/admin" className="text-foreground/80 hover:text-foreground transition-colors">
-                Área Admin
-              </Link>
             </nav>
           </div>
 
