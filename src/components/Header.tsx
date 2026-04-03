@@ -99,6 +99,15 @@ export function Header() {
             {/* Auth Button */}
             {isAuthenticated ? (
               <div className="hidden md:flex items-center gap-2">
+                {isAdmin && (
+                  <button
+                    onClick={() => navigate('/admin/dashboard')}
+                    className="p-2 bg-primary-foreground/20 rounded-xl text-primary-foreground hover:bg-primary-foreground/30 transition-colors"
+                    title="Painel Admin"
+                  >
+                    <Settings className="h-4 w-4" />
+                  </button>
+                )}
                 <span className="text-primary-foreground/80 text-sm truncate max-w-[120px]">
                   {user?.user_metadata?.full_name || user?.email?.split('@')[0]}
                 </span>
