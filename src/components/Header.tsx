@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
-import { ShoppingCart, Menu, X, BookOpen, User, LogOut } from 'lucide-react';
+import { ShoppingCart, Menu, X, BookOpen, User, LogOut, Settings } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui/button';
