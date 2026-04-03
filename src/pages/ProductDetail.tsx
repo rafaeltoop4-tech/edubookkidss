@@ -495,7 +495,7 @@ export default function ProductDetail() {
               <Button
                 onClick={handleWhatsAppClick}
                 className="flex-1 h-14 text-lg font-bold bg-green-500 hover:bg-green-600 text-white rounded-2xl shadow-lg"
-                disabled={!whatsappNumber}
+                disabled={false}
               >
                 <MessageCircle className="mr-2 h-5 w-5" />
                 Comprar pelo WhatsApp
