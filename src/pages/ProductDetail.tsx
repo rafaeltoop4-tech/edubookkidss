@@ -160,7 +160,8 @@ export default function ProductDetail() {
 
   const handleWhatsAppClick = () => {
     requireAuth(async () => {
-      if (!product || !whatsappNumber) return;
+      if (!product) return;
+      const numberToUse = whatsappNumber || '5574999581805';
       const saleCode = generateSaleCode();
       
       try {
