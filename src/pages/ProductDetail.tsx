@@ -243,7 +243,7 @@ export default function ProductDetail() {
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             {/* Image Gallery */}
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
-              <div className="relative aspect-square rounded-3xl overflow-hidden bg-white/10 backdrop-blur-sm shadow-2xl">
+              <div className="relative aspect-[3/4] md:aspect-square rounded-3xl overflow-hidden bg-white/10 backdrop-blur-sm shadow-2xl">
                 <AnimatePresence mode="wait">
                   <motion.img
                     key={currentImageIndex}
