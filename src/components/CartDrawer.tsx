@@ -31,7 +31,7 @@ export function CartDrawer() {
   const [customerPhone, setCustomerPhone] = useState('');
   const [showPreview, setShowPreview] = useState(false);
   const [errors, setErrors] = useState<{ name?: string; phone?: string }>({});
-  const [whatsappNumber, setWhatsappNumber] = useState('5574999581805');
+  const [whatsappNumber, setWhatsappNumber] = useState('');
 
   const { trackPurchase } = useProductMetrics();
 
