@@ -127,29 +127,27 @@ export default function ProductDetail() {
   };
 
   const handleAddToCart = () => {
-    requireAuth(() => {
-      if (!product) return;
-      addItem({
-        id: product.id,
-        title: product.title,
-        price: product.price,
-        image: product.images[0] || '/placeholder.svg',
-      });
-      trackCartAdd(product.id, 1);
-
-      // Track cart event in DB
-      const userId = useAuthStore.getState().user?.id;
-      if (userId) {
-        supabase.from('cart_events').insert({
-          user_id: userId,
-          product_id: product.id,
-          event_type: 'add',
-        }).then(() => {});
-      }
-
-      toast.success(`${product.title} adicionado ao carrinho! 🎉`);
-      openCart();
+    if (!product) return;
+    addItem({
+      id: product.id,
+      title: product.title,
+      price: product.price,
+      image: product.images[0] || '/placeholder.svg',
     });
+    trackCartAdd(product.id, 1);
+
+    // Track cart event in DB if logged in
+    const userId = useAuthStore.getState().user?.id;
+    if (userId) {
+      supabase.from('cart_events').insert({
+        user_id: userId,
+        product_id: product.id,
+        event_type: 'add',
+      }).then(() => {});
+    }
+
+    toast.success(`${product.title} adicionado ao carrinho! 🎉`);
+    openCart();
   };
 
   const generateSaleCode = () => {
