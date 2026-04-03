@@ -1,23 +1,9 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
-  Package, 
-  MessageCircle, 
-  Palette, 
-  LayoutGrid,
-  Settings, 
-  Eye, 
-  LogOut,
-  BookOpen,
-  Home,
-  FileText,
-  Star,
-  HelpCircle,
-  BarChart3,
-  DollarSign,
-  MessageSquare,
-  Menu,
-  X
+  Package, MessageCircle, Palette, LayoutGrid, Settings, Eye, LogOut,
+  BookOpen, Home, FileText, Star, HelpCircle, BarChart3, DollarSign,
+  MessageSquare, Menu, X, Shield
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
