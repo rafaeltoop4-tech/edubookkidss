@@ -23,6 +23,7 @@ import GeneralSettings from "./pages/admin/Settings";
 import Metrics from "./pages/admin/Metrics";
 import Sales from "./pages/admin/Sales";
 import Reviews from "./pages/admin/Reviews";
+import Admins from "./pages/admin/Admins";
 
 const queryClient = new QueryClient();
 
